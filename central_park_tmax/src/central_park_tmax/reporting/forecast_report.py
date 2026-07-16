@@ -1,0 +1,41 @@
+"""Concise human-readable rendering of a prediction record."""
+from __future__ import annotations
+
+from typing import Mapping
+
+
+def render_forecast_text(record: Mapping) -> str:
+    lines = []
+    lines.append(f"Central Park (KNYC) maximum-temperature forecast")
+    lines.append(f"  target date (local) : {record.get('target_date_local')}")
+    lines.append(f"  vintage / issued    : {record.get('vintage')} @ {record.get('forecast_issued_at_local')}")
+    if record.get("is_synthetic"):
+        lines.append("  ** SYNTHETIC DATA — not a real forecast **")
+    lines.append(f"  baseline ({record.get('baseline_model')}) : {record.get('baseline_tmax_f')} °F")
+    lines.append(f"  bias correction     : {record.get('predicted_bias_correction_f')} °F")
+    lines.append(f"  predicted max       : {record.get('predicted_continuous_tmax_f')} °F "
+                 f"({record.get('predicted_continuous_tmax_c')} °C)")
+    if record.get("observed_max_so_far_f") is not None:
+        lines.append(f"  observed so far     : {record.get('observed_max_so_far_f')} °F (hard lower bound)")
+    if record.get("interval_80_f"):
+        lo, hi = record["interval_80_f"]
+        lines.append(f"  80% interval        : [{lo}, {hi}] °F")
+    lines.append(f"  fallback level      : {record.get('fallback_level')}  model: {record.get('model_name')}")
+
+    pmf = record.get("integer_report_probabilities", {})
+    if pmf:
+        top = sorted(pmf.items(), key=lambda kv: kv[1], reverse=True)[:5]
+        lines.append("  most-likely reported integers:")
+        for k, v in top:
+            lines.append(f"      {k} °F : {v*100:5.1f}%")
+
+    cp = record.get("contract_probabilities", {})
+    if cp:
+        lines.append("  contract probabilities (selected):")
+        for key in ("greater_than_90", "greater_than_or_equal_90", "less_than_90",
+                    "between_88_and_90_inclusive", "exactly_90"):
+            if key in cp:
+                lines.append(f"      P[{key}] = {cp[key]*100:5.1f}%")
+    lines.append(f"  sources used: {record.get('data_sources_used')}  missing: {record.get('missing_sources')}")
+    lines.append("  NOTE: forecast only — not an official NWS report or contract settlement.")
+    return "\n".join(lines)

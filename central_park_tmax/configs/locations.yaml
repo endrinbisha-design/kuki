@@ -1,0 +1,36 @@
+# Central Park and surrounding points used for spatial forecast extraction and
+# spatial-gradient features. Coordinates are approximate station/landmark locations.
+# "role" tags drive the gradient features constructed in features/spatial.py.
+
+primary:
+  key: "central_park"
+  name: "NY City Central Park"
+  icao: "KNYC"
+  latitude: 40.77898
+  longitude: -73.96925
+  role: "target"
+
+neighbors:
+  - { key: "laguardia",    name: "LaGuardia Airport",       icao: "KLGA", latitude: 40.7792, longitude: -73.8800, role: "urban_airport" }
+  - { key: "jfk",          name: "JFK Airport",             icao: "KJFK", latitude: 40.6398, longitude: -73.7789, role: "coastal_airport" }
+  - { key: "newark",       name: "Newark Liberty Airport",  icao: "KEWR", latitude: 40.6895, longitude: -74.1745, role: "inland_airport" }
+  - { key: "lower_manhattan", name: "Lower Manhattan",      icao: null,   latitude: 40.7075, longitude: -74.0113, role: "urban_core" }
+  - { key: "ny_harbor",    name: "New York Harbor",         icao: null,   latitude: 40.6700, longitude: -74.0400, role: "marine" }
+  - { key: "coastal_nj",   name: "Coastal New Jersey (Sandy Hook)", icao: null, latitude: 40.4670, longitude: -74.0100, role: "marine" }
+  - { key: "inland_nj",    name: "Inland New Jersey (Morristown)",  icao: "KMMU", latitude: 40.7994, longitude: -74.4149, role: "inland" }
+  - { key: "west_long_island", name: "Western Long Island (Republic)", icao: "KFRG", latitude: 40.7288, longitude: -73.4134, role: "coastal" }
+  - { key: "hudson_valley", name: "Lower Hudson Valley (White Plains)", icao: "KHPN", latitude: 41.0670, longitude: -73.7076, role: "inland" }
+
+# Spatial gradient pairs (a_minus_b). Each becomes a forecast-temperature-difference
+# and dew-point-difference feature.
+gradient_pairs:
+  - { name: "cp_minus_jfk",    a: "central_park", b: "jfk" }
+  - { name: "cp_minus_lga",    a: "central_park", b: "laguardia" }
+  - { name: "newark_minus_jfk", a: "newark", b: "jfk" }
+  - { name: "inland_minus_coastal", a: "inland_nj", b: "coastal_nj" }
+  - { name: "harbor_minus_inland",  a: "ny_harbor", b: "inland_nj" }
+
+spatial_extraction:
+  default_method: "bilinear"   # nearest | bilinear | idw | neighborhood_mean
+  neighborhood_radius_km: 25.0
+  idw_power: 2.0

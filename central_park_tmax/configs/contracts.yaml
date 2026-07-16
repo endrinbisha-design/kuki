@@ -1,0 +1,45 @@
+# NHIGH temperature-contract configuration and settlement timing.
+# The authoritative underlying is the maximum temperature published in the NWS
+# Daily Climate Report for Central Park (Temperature section, "Yesterday" column,
+# "Maximum" row, whole degrees Fahrenheit).
+
+version: "nhigh_v1"
+
+underlying:
+  description: "NWS Daily Climate Report Central Park maximum temperature (whole degrees F)."
+  location: "Central Park NY"
+  section: "Temperature"
+  column: "Yesterday"
+  row: "Maximum"
+  unit: "degF"
+
+timing:
+  timezone: "America/New_York"
+  # Last trading is 11:59 p.m. ET on the target date.
+  last_trading_local: { hour: 23, minute: 59 }
+  # Normal expiration is the first applicable 7:00 or 8:00 a.m. ET after the report
+  # for the target date is released. We model the candidate expiration hours; the
+  # settlement state machine picks the first one at/after report release.
+  normal_expiration_candidate_hours: [7, 8]
+  # Determination may be delayed until 11:00 a.m. ET under review conditions.
+  delayed_determination_local: { hour: 11, minute: 0 }
+
+# Consistency-review triggers (may delay determination to 11:00 a.m. ET):
+review_triggers:
+  - "reported_high_inconsistent_with_6h_metar_max"
+  - "reported_high_inconsistent_with_24h_metar_max"
+  - "final_reported_high_lower_than_earlier_report"
+metar_consistency_tolerance_f: 1.0
+
+# Example contract thresholds used by reporting/backtests. Real markets define
+# their own strikes; these are illustrative and configurable.
+example_thresholds:
+  greater_than: [85, 88, 90, 92, 95]
+  less_than: [85, 88, 90, 92, 95]
+  ranges_inclusive:
+    - [86, 88]
+    - [88, 90]
+    - [90, 92]
+
+polling:
+  report_poll_interval_seconds: 900

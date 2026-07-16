@@ -1,0 +1,30 @@
+000
+CDUS41 KOKX 161510
+CLINYC
+
+CLIMATE REPORT ... CORRECTED
+NATIONAL WEATHER SERVICE NEW YORK, NY
+1105 AM EDT SUN JUL 16 2024
+
+...................................
+
+...THE CENTRAL PARK NY CLIMATE SUMMARY FOR JULY 15 2024...CORRECTED
+
+CLIMATE NORMAL PERIOD: 1991 TO 2020
+CLIMATE RECORD PERIOD: 1869 TO 2024
+
+
+WEATHER ITEM   OBSERVED TIME   RECORD YEAR NORMAL DEPARTURE LAST
+                VALUE   (LST)  VALUE       VALUE  FROM      YEAR
+                                                  NORMAL
+...................................................................
+TEMPERATURE (F)
+ YESTERDAY
+  MAXIMUM         90   258 PM  101 1953    85      5         90
+  MINIMUM         72   530 AM   60 1914    70      2         73
+  AVERAGE         81                       78      3         82
+
+PRECIPITATION (IN)
+  YESTERDAY        0.00          2.75 1975  0.13  -0.13       0.00
+
+$$

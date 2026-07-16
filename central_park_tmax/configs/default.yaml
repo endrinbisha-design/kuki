@@ -1,0 +1,110 @@
+# Top-level configuration for the central_park_tmax pipeline.
+# Environment variables are used ONLY for secrets (see .env.example); everything
+# operational lives here so runs are reproducible from config alone.
+
+station:
+  name: "NY CITY CENTRAL PARK, NY US"
+  shorthand: "KNYC"
+  noaa_station_id: "USW00094728"   # GHCN-Daily id
+  wban: "94728"
+  icao: "KNYC"
+  latitude: 40.77898
+  longitude: -73.96925
+  elevation_m: 42.7                 # Belvedere Castle instrument elevation (approx)
+  timezone: "America/New_York"
+
+paths:
+  data_dir: "data"
+  raw_dir: "data/raw"
+  observations_dir: "data/raw/observations"
+  forecasts_dir: "data/raw/forecasts"
+  nws_reports_dir: "data/raw/nws_reports"
+  interim_dir: "data/interim"
+  processed_dir: "data/processed"
+  predictions_dir: "data/predictions"
+  settlement_dir: "data/settlement"
+  models_dir: "models"
+  reports_dir: "reports"
+  figures_dir: "reports/figures"
+  metrics_dir: "reports/metrics"
+
+# Default forecast issuance vintages (local America/New_York). "prev_day" offsets refer
+# to the calendar day BEFORE the target date; "target_day" to the target date itself.
+forecast_vintages:
+  - { name: "prev_evening_19", day: "prev_day", hour: 19, minute: 0 }
+  - { name: "target_06",       day: "target_day", hour: 6,  minute: 0 }
+  - { name: "target_12",       day: "target_day", hour: 12, minute: 0 }
+  - { name: "target_16",       day: "target_day", hour: 16, minute: 0 }
+  - { name: "target_20",       day: "target_day", hour: 20, minute: 0 }
+  - { name: "target_23",       day: "target_day", hour: 23, minute: 0 }
+
+# Local hours at which forecast temperature-trajectory features are sampled.
+trajectory_hours_local: [0, 3, 6, 9, 12, 15, 18, 21]
+
+active_forecast_sources:
+  # Order matters: first usable source becomes the residual baseline.
+  # See data_sources.yaml for per-source capability flags.
+  - "nws_gridpoint"     # fully implemented, current-data, credential-free JSON
+  - "nbm"               # modular adapter, archive support requires Herbie/cfgrib
+  - "hrrr"
+  - "gfs"
+  - "gefs"
+
+baseline_source_preference: ["nbm", "hrrr", "gfs", "gefs", "nws_gridpoint"]
+
+archive:
+  start_date: "2019-01-01"
+  end_date: null           # null => today
+
+models:
+  random_seed: 20240101
+  residual_target: true    # model predicts (report_tmax - baseline_tmax)
+  boosting:
+    backend: "auto"        # auto -> xgboost, else lightgbm, else sklearn HistGBR
+    n_estimators: 600
+    learning_rate: 0.03
+    max_depth: 4
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_lambda: 1.0
+    min_child_weight: 5.0
+    early_stopping_rounds: 50
+  quantiles: [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]
+  hyperparameter_search:
+    enabled: true
+    max_candidates: 8      # small, time-series-aware search
+
+uncertainty:
+  methods: ["quantile_gbm", "empirical_residual"]
+  n_simulation_draws: 20000
+
+validation:
+  scheme: "rolling_origin"
+  # Explicit expanding-window folds (train_end inclusive, test = that year).
+  folds:
+    - { train_end: "2021-12-31", test_start: "2022-01-01", test_end: "2022-12-31" }
+    - { train_end: "2022-12-31", test_start: "2023-01-01", test_end: "2023-12-31" }
+    - { train_end: "2023-12-31", test_start: "2024-01-01", test_end: "2024-12-31" }
+    - { train_end: "2024-12-31", test_start: "2025-01-01", test_end: "2025-12-31" }
+  min_train_days: 365
+
+logging:
+  level: "INFO"
+  json: false
+
+http:
+  timeout_seconds: 30
+  max_retries: 4
+  backoff_seconds: 2.0
+  cache_enabled: true
+  user_agent: "central_park_tmax/0.1 (research; contact via NWS_API_USER_AGENT_EMAIL)"
+
+reporting_convention:
+  version: "nws_cli_v1"
+  # How the integer report value is derived from the latent continuous max.
+  # 'round_half_up' is the documented default; alternatives are configurable
+  # and evaluated empirically (see models/reporting_convention.py and README).
+  method: "round_half_up"
+
+contract_rules:
+  version: "nhigh_v1"

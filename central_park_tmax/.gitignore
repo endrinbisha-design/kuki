@@ -1,0 +1,33 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.env
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Data & artifacts: keep the directory tree (via .gitkeep) but not bulk contents.
+data/raw/**
+data/interim/**
+data/processed/**
+data/predictions/**
+data/settlement/**
+models/**
+reports/figures/**
+reports/metrics/**
+reports/forecasts/**
+reports/settlement/**
+*.grib
+*.grib2
+*.nc
+*.idx
+
+# Keep fixtures (they are checked in intentionally)
+!tests/fixtures/**
+!**/.gitkeep
