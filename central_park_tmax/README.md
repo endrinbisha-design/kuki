@@ -149,19 +149,34 @@ The full real-data path has been exercised end-to-end against live NOAA sources:
 - **Observations:** 57,014 real GHCN-Daily records for USW00094728 (1869 → mirror max date).
 - **Forecasts:** live point extraction verified for all four GRIB models (NBM, HRRR, GFS,
   GEFS ensemble mean) plus the NWS gridpoint source.
-- **Training set:** 78 days of archived NBM runs (2024-11-15 → 2025-01-31, previous-evening
-  vintage, 3-hourly trajectory), labels = GHCN final (provenance `ghcn_daily_final`).
-- **Rolling-origin backtest (real data):** raw NBM MAE **1.83 °F** → boosted residual model
-  **1.57 °F** (~14 % improvement from only ~2 months of training data).
+- **Training set:** 184 consecutive days of archived NBM runs (2024-08-01 → 2025-01-31,
+  previous-evening vintage, 3-hourly trajectory, zero gaps), labels = GHCN final
+  (provenance `ghcn_daily_final`).
+- **Rolling-origin backtest** (3 folds, 111 out-of-sample days):
+
+  | model | MAE (°F) | mean error | within ±2 °F |
+  |---|---|---|---|
+  | raw NBM | 2.20 | −1.61 | 50 % |
+  | rolling 30-day bias | 1.85 | −0.30 | 65 % |
+  | ridge residual | 3.78 | +0.95 | 28 % |
+  | **boosted residual** | **1.71** | **−0.22** | **67 %** |
+
+  The production model beats raw NBM by **22 %** and removes its −1.6 °F cold bias.
+  Integer-report distribution: exact-integer hit 20.7 %, top-two 34.2 %, log-loss 2.91.
+- **Strategy backtest** (walk-forward PMFs, simulated market — see §11b): edge-flat
+  +20.5 % ROI on risked capital over 310 trades; 25 % Kelly +$277 net with ~7× the
+  drawdown; tail-fade 96.9 % win rate on 128 small NO trades.
 - **Live forecast:** trained model + latest NBM run produced a full probabilistic forecast
   for the next local day (continuous distribution, integer PMF summing to 1, exact contract
   probabilities), `fallback_level: 1`.
 
-*Caveats of this reference run (extend the archive to remove them):* the training window is
-winter-only, so summer-time corrections are extrapolations; part of the learned +bias
-corrects the 3-hourly trajectory sampling (raise `fxx_step=1` for hourly); labels are GHCN
-research labels, not archived CLI report values — provenance is tagged accordingly and the
-two are never conflated.
+*Caveats of this reference run:* labels are GHCN research labels, not archived CLI report
+values (provenance is tagged; the two are never conflated); part of the learned correction
+compensates 3-hourly trajectory sampling (`fxx_step=1` removes it); strategy P&L is against
+a **simulated** counterparty anchored on the same NBM guidance — it demonstrates the model
+can exploit a *less-calibrated* pricer, not that real Kalshi markets (which are sharper and
+watch live observations) offer the same edge. One season of data; extend the archive for
+seasonal robustness.
 
 ## 6b. Quickstart — fully offline synthetic demo
 

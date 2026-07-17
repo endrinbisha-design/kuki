@@ -52,10 +52,9 @@ def walk_forward_pmfs(cfg: AppConfig, dataset: pd.DataFrame,
                       target_col: str = "target_report_max_f",
                       n_draws: int = 8000) -> list[DayRecord]:
     """Out-of-sample integer PMFs for every test day across rolling-origin folds."""
+    from ..evaluation.backtest import resolve_folds
     df = dataset.dropna(subset=[target_col, "baseline_tmax_f"]).sort_values("date").reset_index(drop=True)
-    folds = folds_from_config(cfg.validation.folds)
-    if not any(fold.test_mask(df["date"]).any() for fold in folds):
-        folds = auto_folds_from_span(df["date"], n_folds=3)
+    folds = resolve_folds(cfg, df)
 
     records: list[DayRecord] = []
     rng = np.random.default_rng(cfg.models.random_seed)

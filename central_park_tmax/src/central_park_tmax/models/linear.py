@@ -17,6 +17,17 @@ from sklearn.preprocessing import StandardScaler
 
 from .features_frame import FeatureMatrix
 
+# Features a LINEAR model must never see raw: they are unbounded or wrap across the
+# calendar (day_of_year jumps 366 -> 1), so linear extrapolation beyond the training
+# window produces catastrophic drift (observed: -54 F mean error when training
+# Aug-Oct and testing across New Year). The bounded harmonics (doy_sin/doy_cos)
+# carry the same signal safely. Tree models are unaffected and keep these features.
+LINEAR_EXCLUDED_FEATURES = {"day_of_year", "month"}
+
+# Physically-motivated bound on a residual correction to a numerical baseline: no
+# defensible MOS correction for KNYC exceeds this magnitude.
+MAX_ABS_RESIDUAL_F = 15.0
+
 
 @dataclass
 class LinearContinuous:
@@ -31,7 +42,10 @@ class LinearContinuous:
     def fit(self, fm: FeatureMatrix) -> "LinearContinuous":
         self.feature_names = fm.feature_names
         n_samples, n_features = fm.X.shape
-        est = Ridge(alpha=self.alpha) if n_samples < 2 * n_features else LinearRegression()
+        if n_samples < 2 * n_features:
+            est = Ridge(alpha=max(self.alpha, 10.0 * n_features / max(n_samples, 1)))
+        else:
+            est = LinearRegression()
         self.model = Pipeline([("scale", StandardScaler()), ("lm", est)])
         self.model.fit(fm.X, fm.y)
         return self
@@ -58,19 +72,26 @@ class LinearResidual:
         self.model: Optional[Pipeline] = None
 
     def fit(self, fm: FeatureMatrix) -> "LinearResidual":
-        self.feature_names = fm.feature_names
-        n_samples, n_features = fm.X.shape
+        self.feature_names = [c for c in fm.feature_names if c not in LINEAR_EXCLUDED_FEATURES]
+        n_samples, n_features = len(fm.X), len(self.feature_names)
         use_ridge = self.ridge or n_samples < 2 * n_features
+        # Scale the penalty with how underdetermined the fit is: with ~85 standardized
+        # features on ~60 rows, alpha=1 still lets coefficients extrapolate wildly on
+        # seasonally-drifting features. alpha ~ 10 * p/n keeps the baseline sane.
+        alpha = max(self.alpha, 10.0 * n_features / max(n_samples, 1)) if use_ridge else self.alpha
         if use_ridge and not self.ridge:
             from ..logging_config import get_logger
             get_logger(__name__).warning(
                 "linear_residual: %d samples for %d features is underdetermined; "
-                "using ridge(alpha=%.1f) regularization.", n_samples, n_features, self.alpha)
-        est = Ridge(alpha=self.alpha) if use_ridge else LinearRegression()
+                "using ridge(alpha=%.1f).", n_samples, n_features, alpha)
+        est = Ridge(alpha=alpha) if use_ridge else LinearRegression()
         self.model = Pipeline([("scale", StandardScaler()), ("lm", est)])
-        self.model.fit(fm.X, fm.residual_target())
+        self.model.fit(fm.X_for(self.feature_names), fm.residual_target())
         return self
 
     def predict(self, fm: FeatureMatrix) -> np.ndarray:
         resid = self.model.predict(fm.X_for(self.feature_names))
+        # A residual correction beyond +-15 F is physically indefensible for KNYC;
+        # clipping bounds the damage from extrapolation instead of emitting nonsense.
+        resid = np.clip(resid, -MAX_ABS_RESIDUAL_F, MAX_ABS_RESIDUAL_F)
         return fm.baseline.to_numpy(dtype=float) + resid

@@ -41,19 +41,36 @@ class BacktestResult:
         return {"per_vintage": self.per_vintage, "summary": self.summary}
 
 
+def resolve_folds(cfg: AppConfig, dataset: pd.DataFrame, min_coverage: float = 0.35):
+    """Configured folds, or auto rolling-origin folds when coverage is inadequate.
+
+    A configured fold only *usably* covers a row if the row falls in its test window AND
+    the fold has a non-trivial training window in this dataset. If usable coverage is
+    below ``min_coverage`` of rows (e.g. a short archive where only one January
+    intersects a year-based fold), fall back to folds derived from the data span —
+    otherwise the backtest silently scores a sliver and looks authoritative.
+    """
+    folds = folds_from_config(cfg.validation.folds)
+    if "date" not in dataset.columns or not len(dataset):
+        return folds
+    d = pd.to_datetime(dataset["date"])
+    usable = 0
+    for fold in folds:
+        tr_n = int(fold.train_mask(dataset["date"]).sum())
+        if tr_n >= 30:
+            usable += int(fold.test_mask(dataset["date"]).sum())
+    if usable / len(dataset) < min_coverage:
+        log.warning(
+            "Configured folds usably cover only %d/%d rows of span %s..%s; "
+            "deriving rolling-origin folds from the data instead.",
+            usable, len(dataset), d.min().date(), d.max().date())
+        return auto_folds_from_span(dataset["date"], n_folds=3)
+    return folds
+
+
 def run_backtest(cfg: AppConfig, dataset: pd.DataFrame,
                  target_col: str = "target_report_max_f") -> BacktestResult:
-    folds = folds_from_config(cfg.validation.folds)
-    # If no configured fold's test window intersects the dataset (e.g. a short real-data
-    # span), derive rolling-origin folds from the data itself instead of silently scoring
-    # nothing.
-    if "date" in dataset.columns and len(dataset):
-        d = pd.to_datetime(dataset["date"])
-        if not any(fold.test_mask(dataset["date"]).any() for fold in folds):
-            log.warning("Configured folds do not intersect dataset span %s..%s; "
-                        "deriving rolling-origin folds from the data.",
-                        d.min().date(), d.max().date())
-            folds = auto_folds_from_span(dataset["date"], n_folds=3)
+    folds = resolve_folds(cfg, dataset)
     result = BacktestResult()
     vintages = sorted(dataset["vintage"].unique()) if "vintage" in dataset else ["default"]
     thresholds = (cfg.contracts.example_thresholds if cfg.contracts else {})
