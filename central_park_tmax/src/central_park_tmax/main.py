@@ -73,7 +73,8 @@ def cmd_build_forecast_archive(cfg, args):
     source = _pick_source(cfg, args)
     start = _parse_date(args.start) or cfg.archive_start
     end = _parse_date(args.end) or (cfg.archive_end or date.today())
-    out = build_forecast_archive(cfg, source, start, end)
+    vintages = args.vintage.split(",") if getattr(args, "vintage", None) else None
+    out = build_forecast_archive(cfg, source, start, end, vintages=vintages)
     print(f"Forecast archive written: {out}")
 
 
@@ -216,7 +217,13 @@ def _load_dataset(cfg, args) -> pd.DataFrame:
     name = "dataset_synthetic.csv" if args.synthetic else "dataset.csv"
     p = Path(cfg.paths.processed_dir) / name
     if p.exists():
-        return pd.read_csv(p)
+        df = pd.read_csv(p)
+        if not args.synthetic:
+            # Enrich with any secondary-model archives present (hrrr/gfs inter-model
+            # spread features); a no-op when the archive CSVs don't exist yet.
+            from .pipelines.merge_forecast_archives import merge_forecast_archives
+            df = merge_forecast_archives(cfg, df)
+        return df
     log.info("Dataset %s not found; building it now.", p)
     source = _pick_source(cfg, args)
     normals, tmax, prcp = _history(cfg, args.synthetic)
@@ -316,6 +323,7 @@ def build_parser() -> argparse.ArgumentParser:
     rp.add_argument("--from-file", default=None, help="Archive a CLI report from a text file")
     fa = add("build-forecast-archive", cmd_build_forecast_archive)
     fa.add_argument("--source", default=None); fa.add_argument("--start", default=None); fa.add_argument("--end", default=None)
+    fa.add_argument("--vintage", default=None, help="Comma-separated vintage names (default: all)")
     bd = add("build-dataset", cmd_build_dataset)
     bd.add_argument("--source", default=None); bd.add_argument("--start", default=None); bd.add_argument("--end", default=None)
     bd.add_argument("--vintage", default=None,

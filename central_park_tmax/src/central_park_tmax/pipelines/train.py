@@ -93,6 +93,7 @@ class VintageModel:
     train_start: str
     train_end: str
     n_train: int
+    feature_stats: Optional[object] = None   # ood_guard.FeatureStats (None in old bundles)
 
 
 @dataclass
@@ -153,6 +154,7 @@ def train_models(cfg: AppConfig, dataset: pd.DataFrame,
         else:
             calib.add(fm_tr.y.to_numpy(), boost.predict(fm_tr))
 
+        from ..models.ood_guard import FeatureStats
         bundle.models[vintage] = VintageModel(
             vintage=vintage, boosting=boost, quantile_model=qmodel,
             feature_names=fm_tr.feature_names, oos_residuals=calib.array(),
@@ -160,6 +162,7 @@ def train_models(cfg: AppConfig, dataset: pd.DataFrame,
             contract_rule_version=cfg.contract_rules.version,
             train_start=str(vdf["date"].min()), train_end=str(vdf["date"].max()),
             n_train=len(vdf),
+            feature_stats=FeatureStats.from_frame(fm_tr.X),
         )
         log.info("Trained vintage=%s backend=%s n=%d resid_std=%.2f",
                  vintage, boost.name, len(vdf), float(np.std(calib.array())))

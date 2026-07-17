@@ -64,6 +64,7 @@ def predict_one(
     sources_available: Optional[list[str]] = None,
     sources_missing: Optional[list[str]] = None,
     n_draws: int = 20000,
+    secondary_tmax_f: Optional[dict[str, float]] = None,
 ) -> dict:
     issue_utc = to_utc(issue_local)
     fallback_level = FallbackLevel.FULL_MODEL
@@ -91,11 +92,35 @@ def predict_one(
     # --- point prediction & residual std via fallback hierarchy ---
     model = _nearest_vintage_model(bundle, vintage_name) if bundle else None
     attributions: list[dict] = []
+    ood_info: dict = {}
     if model is not None and baseline is not None:
         # At predict time there is no label column; build the matrix from the feature row
         # with the baseline supplied for residual reconstruction.
         fm = _feature_matrix_for_predict(row, model.feature_names, baseline)
         point = float(model.boosting.predict(fm)[0])
+        # Out-of-distribution guard: attenuate the learned correction when the row's key
+        # features sit outside the training envelope (e.g. season the model never saw).
+        stats = getattr(model, "feature_stats", None)
+        if stats is not None:
+            from ..models.ood_guard import apply_shrink, assess_ood
+            ood = assess_ood(row, stats, model.boosting.feature_importance())
+            if ood.shrink < 1.0:
+                log.warning("OOD guard: score=%.2f shrink=%.2f (offending: %s); "
+                            "correction %+.2fF -> %+.2fF",
+                            ood.score, ood.shrink, ood.offending[:4],
+                            point - baseline, (point - baseline) * ood.shrink)
+                point = apply_shrink(float(baseline), point, ood.shrink)
+            ood_info = ood.to_dict()
+        # Consensus guard: bound the correction by live inter-model disagreement when
+        # secondary model maxima (e.g. HRRR/GFS) are supplied by the caller.
+        if secondary_tmax_f:
+            from ..models.ood_guard import consensus_cap
+            point, cons = consensus_cap(float(baseline), point, secondary_tmax_f)
+            if cons.applied:
+                log.warning("Consensus cap: spread=%.2fF cap=%.2fF correction %+.2fF -> %+.2fF",
+                            cons.spread_f, cons.cap_f,
+                            cons.correction_before_f, cons.correction_after_f)
+            ood_info.update(cons.to_dict())
         residuals = model.oos_residuals
         attributions = _local_attributions(model, fm)
         model_name = f"{model.boosting.name}"
@@ -208,6 +233,7 @@ def predict_one(
         "reporting_convention_version": convention_version(reporting_method),
         "contract_rule_version": cfg.contract_rules.version,
         "uncertainty_method": "+".join(uncertainty_used) + "+simulation",
+        **ood_info,
         "is_synthetic": synthetic,
         "note": "Forecast only. Not an official NWS report or contract settlement.",
     }
