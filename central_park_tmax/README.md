@@ -171,7 +171,9 @@ python -m central_park_tmax build-forecast-archive --source nbm --start 2023-01-
 #    (date, vintage) for byte-range GRIB extraction; start with one vintage:
 python -m central_park_tmax build-dataset --source nbm \
     --start 2024-11-15 --end 2025-01-31 --vintage prev_evening_19
-#    then widen the range / add vintages as your archive grows.
+#    Builds are RESUMABLE: rows checkpoint to data/processed/dataset.csv after every
+#    date, and a rerun skips (date, vintage) pairs already present — safe to interrupt.
+#    Widen the range / add vintages incrementally as your archive grows.
 
 # 5. Rolling-origin backtest (metrics JSON + plots under reports/)
 python -m central_park_tmax backtest
