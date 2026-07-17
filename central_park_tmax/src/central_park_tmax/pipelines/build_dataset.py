@@ -68,9 +68,28 @@ def build_dataset(
 
     active_vintages = [v for v in cfg.forecast_vintages
                        if vintages is None or v.name in vintages]
+
+    # Resumable builds: reuse rows already present in the output CSV (matched on
+    # (date, vintage)) and checkpoint after every date, so an interrupted multi-hour
+    # archive build restarts where it left off instead of re-downloading everything.
+    out_path = Path(cfg.paths.processed_dir) / ("dataset_synthetic.csv" if synthetic else "dataset.csv")
     rows: list[dict] = []
+    done: set[tuple[str, str]] = set()
+    if save and out_path.exists():
+        try:
+            existing = pd.read_csv(out_path, dtype={"date": str})
+            rows = existing.to_dict("records")
+            done = {(r["date"], r["vintage"]) for r in rows}
+            log.info("Resuming dataset build: %d existing rows in %s", len(rows), out_path)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Could not resume from %s (%s); rebuilding.", out_path, exc)
+
     for target_date in _date_range(start, end):
+        date_had_new = False
         for vintage in active_vintages:
+            if (target_date.isoformat(), vintage.name) in done:
+                continue
+            date_had_new = True
             vt = resolve_vintage(target_date, vintage.day, vintage.hour, vintage.minute, vintage.name)
             issue_utc = to_utc(vt.issue_local)
             run = source.select_and_fetch(target_date, issue_utc, cfg.locations)
@@ -98,16 +117,20 @@ def build_dataset(
             row["target_ghcn_max_f"] = ghcn_max
             row["target_provenance"] = provenance.value
             rows.append(row)
+            done.add((target_date.isoformat(), vintage.name))
+
+        # Checkpoint after each date that added rows (atomic replace; cheap at this scale).
+        if save and date_had_new and rows:
+            pd.DataFrame(rows).to_csv(out_path, index=False)
 
     df = pd.DataFrame(rows)
     if save and not df.empty:
-        out = Path(cfg.paths.processed_dir) / ("dataset_synthetic.csv" if synthetic else "dataset.csv")
-        df.to_csv(out, index=False)
+        df.to_csv(out_path, index=False)
         _write_schema(cfg, df, synthetic)
-        write_manifest(Path(cfg.paths.processed_dir) / "dataset_manifest.json", [out],
+        write_manifest(Path(cfg.paths.processed_dir) / "dataset_manifest.json", [out_path],
                        extra={"n_rows": len(df), "synthetic": synthetic,
                               "date_range": [start.isoformat(), end.isoformat()]})
-        log.info("Wrote dataset: %s (%d rows)", out, len(df))
+        log.info("Wrote dataset: %s (%d rows)", out_path, len(df))
     return df
 
 

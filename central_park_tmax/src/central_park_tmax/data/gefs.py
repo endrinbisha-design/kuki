@@ -21,3 +21,7 @@ class GefsForecastSource(HerbieForecastSource):
     tmp_search = ":TMP:2 m above ground:"
     is_ensemble = True
     max_fxx = 120
+    # 'avg' selects the geavg ensemble-mean product on AWS. Per-member extraction is the
+    # documented extension point: instantiate with herbie_kwargs={'member': N}.
+    herbie_kwargs = {"member": "avg"}
+    fxx_multiple = 3         # 0.5 deg GEFS output is 3-hourly

@@ -94,6 +94,8 @@ class HerbieForecastSource(ForecastSource):
     max_fxx: int = 60
     keep_grib: bool = False       # delete GRIB subsets after extraction (disk safety)
     save_dir: Optional[str] = None
+    herbie_kwargs: dict = {}      # extra per-model Herbie args (e.g. GEFS member)
+    fxx_multiple: int = 1         # output cadence: files exist only at multiples of this
 
     def list_available_runs(self, target_date: date, issued_before_utc: datetime) -> list[RunHandle]:
         start, _ = local_day_bounds_utc(target_date)
@@ -124,9 +126,18 @@ class HerbieForecastSource(ForecastSource):
                 f"{self.name} run {run.cycle} does not reach target day {target_date} "
                 f"within max_fxx={self.max_fxx}."
             )
-        fxx_list = list(range(fxx_start, fxx_end + 1, self.fxx_step))
-        if fxx_list[-1] != fxx_end:
-            fxx_list.append(fxx_end)
+        # Align to the model's output cadence (e.g. GEFS 0.5 deg publishes 3-hourly).
+        m = self.fxx_multiple
+        fxx_start = ((fxx_start + m - 1) // m) * m
+        step = max(self.fxx_step, m)
+        step = ((step + m - 1) // m) * m
+        fxx_end_aligned = (fxx_end // m) * m
+        fxx_list = list(range(fxx_start, fxx_end_aligned + 1, step))
+        if not fxx_list:
+            raise ForecastSourceUnavailable(
+                f"{self.name} run {run.cycle}: no aligned forecast hours cover {target_date}.")
+        if fxx_list[-1] != fxx_end_aligned:
+            fxx_list.append(fxx_end_aligned)
 
         points = [(p.key, p.latitude, p.longitude) for p in locations.all_points()]
         acc: dict[str, list[tuple[datetime, float]]] = {k: [] for k, _, _ in points}
@@ -137,11 +148,11 @@ class HerbieForecastSource(ForecastSource):
         for fxx in fxx_list:
             grib_path = None
             try:
-                H = Herbie(init_naive, model=self.model, product=self.product,
-                           fxx=fxx, priority=["aws"], verbose=False,
-                           save_dir=self.save_dir) if self.save_dir else \
-                    Herbie(init_naive, model=self.model, product=self.product,
-                           fxx=fxx, priority=["aws"], verbose=False)
+                kwargs = dict(model=self.model, product=self.product, fxx=fxx,
+                              priority=["aws"], verbose=False, **self.herbie_kwargs)
+                if self.save_dir:
+                    kwargs["save_dir"] = self.save_dir
+                H = Herbie(init_naive, **kwargs)
                 if H.grib is None:
                     raise FileNotFoundError(f"no GRIB on aws for {self.model} {run.cycle} f{fxx:03d}")
                 ds = H.xarray(self.tmp_search, remove_grib=not self.keep_grib)
