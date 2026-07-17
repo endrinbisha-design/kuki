@@ -21,14 +21,29 @@ from .reporting_convention import apply_reporting_convention
 
 
 def simulate_from_residuals(point: float, residuals: np.ndarray, n: int,
-                            rng: Optional[np.random.Generator] = None) -> np.ndarray:
-    """Bootstrap latent-max samples: point + resampled out-of-sample residuals."""
+                            rng: Optional[np.random.Generator] = None,
+                            smooth: bool = True) -> np.ndarray:
+    """Smoothed bootstrap of latent-max samples: point + resampled OOS residuals + kernel noise.
+
+    A raw bootstrap can only ever reproduce the finitely many residuals observed
+    out-of-sample; with small calibration sets (weeks-months of data) that assigns
+    probability ~0 to integers just outside the seen range and produces catastrophic
+    log-loss. The smoothed bootstrap (Silverman-bandwidth Gaussian kernel, floored at
+    0.25 F) yields a continuous predictive density with honest tails while preserving the
+    empirical residual shape. Set ``smooth=False`` for the raw bootstrap.
+    """
     rng = rng or np.random.default_rng(0)
     r = np.asarray(residuals, dtype=float)
     r = r[~np.isnan(r)]
     if r.size == 0:
         r = np.array([0.0])
     draws = rng.choice(r, size=n, replace=True)
+    if smooth:
+        sd = float(np.std(r))
+        # Silverman's rule-of-thumb bandwidth; floor keeps tails honest when the
+        # calibration set is tiny or degenerate.
+        bandwidth = max(1.06 * sd * max(r.size, 2) ** (-1 / 5), 0.25)
+        draws = draws + rng.normal(0.0, bandwidth, size=n)
     return point + draws
 
 

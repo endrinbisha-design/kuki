@@ -43,3 +43,24 @@ def test_simulate_from_quantiles_monotone_support():
     # support has no interior gaps
     keys = sorted(dist.pmf.keys())
     assert keys == list(range(keys[0], keys[-1] + 1))
+
+
+def test_smoothed_bootstrap_covers_unseen_integers():
+    # With few residuals, the raw bootstrap assigns ~0 mass to integers just outside the
+    # observed range -> catastrophic log loss. The smoothed bootstrap must not.
+    resid = np.array([-0.5, 0.0, 0.4, 0.6, -0.2])
+    samples = simulate_from_residuals(88.0, resid, 200000, np.random.default_rng(5), smooth=True)
+    dist = integer_report_distribution(samples)
+    # 90 was strictly unreachable raw (max possible sample 88.6): smoothing must give it
+    # small but nonzero probability, so log-loss stays finite if 90 verifies.
+    assert dist.pmf.get(90, 0.0) > 1e-4
+    assert abs(dist.total() - 1.0) < 1e-9
+    # Raw bootstrap really cannot reach 90 (sanity check of the premise).
+    raw = simulate_from_residuals(88.0, resid, 200000, np.random.default_rng(5), smooth=False)
+    assert integer_report_distribution(raw).pmf.get(90, 0.0) == 0.0
+
+
+def test_raw_bootstrap_still_available():
+    resid = np.array([-1.0, 0.0, 1.0])
+    samples = simulate_from_residuals(88.0, resid, 1000, np.random.default_rng(6), smooth=False)
+    assert set(np.round(samples, 6)) <= {87.0, 88.0, 89.0}
