@@ -18,3 +18,4 @@ class NbmForecastSource(HerbieForecastSource):
     latency_hours = 1.5
     tmp_search = ":TMP:2 m above ground:"
     is_ensemble = False
+    max_fxx = 36            # hourly output extends to f036 for every cycle

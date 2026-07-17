@@ -118,6 +118,31 @@ class ForecastSource(abc.ABC):
             return None
         return max(runs, key=lambda r: r.init_utc)
 
+    def select_and_fetch(self, target_date: date, issued_before_utc: datetime,
+                         locations, max_tries: int = 4) -> Optional["ForecastRun"]:
+        """Fetch the newest usable run, falling back to earlier cycles on fetch failure.
+
+        Real archives have gaps (late cycles, missing files); a slightly older run that was
+        genuinely available at the issue time is still leakage-safe. Tries up to
+        ``max_tries`` cycles newest-first; returns None if none fetch.
+        """
+        from . import ForecastSourceUnavailable
+        runs = sorted(
+            (r for r in self.list_available_runs(target_date, issued_before_utc)
+             if self.validate_run_availability(r, issued_before_utc)),
+            key=lambda r: r.init_utc, reverse=True,
+        )
+        for handle in runs[:max_tries]:
+            try:
+                return self.fetch_run(handle, locations, target_date)
+            except ForecastSourceUnavailable as exc:
+                log.warning("%s cycle %s unusable (%s); trying earlier cycle.",
+                            self.name, handle.cycle, str(exc)[:160])
+            except Exception as exc:  # noqa: BLE001
+                log.warning("%s cycle %s fetch error (%s); trying earlier cycle.",
+                            self.name, handle.cycle, str(exc)[:160])
+        return None
+
     def extract_point_features(self, run: ForecastRun, location_key: str, target_date: date) -> dict:
         """Default point-feature extraction (daily max + basic trajectory)."""
         out: dict[str, float] = {}

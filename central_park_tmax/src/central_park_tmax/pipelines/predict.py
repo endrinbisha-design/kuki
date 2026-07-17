@@ -66,14 +66,14 @@ def predict_one(
     n_draws: int = 20000,
 ) -> dict:
     issue_utc = to_utc(issue_local)
-    run_handle = source.select_run(target_date, issue_utc)
     fallback_level = FallbackLevel.FULL_MODEL
 
-    if run_handle is None:
+    # Newest usable cycle available at the issue time; falls back to earlier cycles on
+    # archive gaps (still leakage-safe). None => no source => climate-normal fallback.
+    run = source.select_and_fetch(target_date, issue_utc, cfg.locations)
+    if run is None:
         return _climate_normal_fallback(cfg, target_date, vintage_name, issue_local, normals,
                                         sources_available, sources_missing)
-
-    run = source.fetch_run(run_handle, cfg.locations, target_date)
 
     if synthetic and obs is None:
         obs = synthetic_observation_frame(target_date, up_to_utc=issue_utc)
@@ -118,7 +118,36 @@ def predict_one(
     # --- intraday observed-max constraint on the point AND the distribution ---
     point = apply_observed_max_constraint(point, observed_max)
     rng = np.random.default_rng(cfg.models.random_seed)
-    samples = simulate_from_residuals(point, residuals, n_draws, rng)
+
+    # Uncertainty: prefer quantile-GBM inverse-CDF sampling when trained and configured;
+    # otherwise (or additionally, as a 50/50 mixture) empirical residual bootstrap.
+    methods = list(cfg.uncertainty.methods)
+    uncertainty_used = []
+    sample_sets = []
+    if (model is not None and "quantile_gbm" in methods
+            and getattr(model, "quantile_model", None) is not None):
+        try:
+            from ..models.discrete_outcomes import simulate_from_quantiles
+            qdf = model.quantile_model.predict_quantiles(fm)
+            levels = model.quantile_model.quantiles
+            values = [float(qdf.iloc[0][f"q{int(q*100):02d}"]) for q in levels]
+            # Re-center quantile curve on the (possibly obs-constrained) point via the median.
+            shift = point - values[len(values) // 2]
+            values = [v + shift for v in values]
+            sample_sets.append(simulate_from_quantiles(levels, values, n_draws, rng))
+            uncertainty_used.append("quantile_gbm")
+        except Exception as exc:  # noqa: BLE001
+            log.warning("quantile_gbm sampling failed (%s); using empirical residuals.", exc)
+    if "empirical_residual" in methods or not sample_sets:
+        sample_sets.append(simulate_from_residuals(point, residuals, n_draws, rng))
+        uncertainty_used.append("empirical_residual")
+    if len(sample_sets) > 1:
+        # Equal-weight mixture of the two calibrated sample sets.
+        k = n_draws // len(sample_sets)
+        samples = np.concatenate([s[:k] for s in sample_sets])
+    else:
+        samples = sample_sets[0]
+
     if observed_max is not None and not (isinstance(observed_max, float) and np.isnan(observed_max)):
         samples = np.maximum(samples, observed_max)
     check_prediction_not_below_observed(point, observed_max)
@@ -178,7 +207,7 @@ def predict_one(
         "model_trained_through": (model.train_end if model else None),
         "reporting_convention_version": convention_version(reporting_method),
         "contract_rule_version": cfg.contract_rules.version,
-        "uncertainty_method": "empirical_residual+simulation",
+        "uncertainty_method": "+".join(uncertainty_used) + "+simulation",
         "is_synthetic": synthetic,
         "note": "Forecast only. Not an official NWS report or contract settlement.",
     }

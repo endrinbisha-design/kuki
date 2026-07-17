@@ -18,7 +18,11 @@ observations:
     requires_credentials: false
     requires_grib: false
     optional: false
-    notes: "Bulk GHCN-Daily .csv for USW00094728 from NCEI. Final QC values (not the contract label)."
+    notes: >
+      Bulk GHCN-Daily for USW00094728: NCEI 'access' CSV primary with automatic fallback to
+      the NOAA Open Data AWS mirror (noaa-ghcn-pds, long format). Final QC values (research
+      labels / climatology; not the contract label). The AWS mirror can lag NCEI by days to
+      months - check the max date and prefer NCEI when reachable.
   hourly_lcd:
     implemented: false
     current_data: false
@@ -54,13 +58,16 @@ forecast_sources:
     optional: false
     notes: "api.weather.gov gridpoint forecast (JSON). Fully implemented current-data baseline; no historical archive."
   nbm:
-    implemented: true          # adapter + point extraction implemented
-    current_data: true         # via NOMADS/AWS when Herbie+cfgrib present
-    historical_archive: true   # via AWS Open Data (noaa-nbm-grib2-pds) when Herbie+cfgrib present
+    implemented: true          # fully working: real point extraction verified against AWS
+    current_data: true         # AWS Open Data (noaa-nbm-grib2-pds), aws-only priority
+    historical_archive: true   # same bucket, back to ~2020-09
     requires_credentials: false
-    requires_grib: true
+    requires_grib: true        # pip 'eccodes' wheels bundle the ecCodes binary
     optional: false
-    notes: "Preferred residual baseline. Requires cfgrib/eccodes (+Herbie). Raises documented ForecastSourceUnavailable when missing."
+    notes: >
+      Preferred residual baseline. Byte-range subsetting downloads only the 2 m temperature
+      message per forecast hour (~1-2 MB); GRIB subsets are deleted after extraction.
+      Raises documented ForecastSourceUnavailable when cfgrib/Herbie are missing.
   hrrr:
     implemented: true
     current_data: true

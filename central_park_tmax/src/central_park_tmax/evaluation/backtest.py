@@ -27,7 +27,7 @@ from ..models.linear import LinearResidual
 from ..models.quantiles import EmpiricalResidualQuantiles
 from ..contracts.probabilities import contract_probability_report
 from . import metrics as M
-from .splits import Fold, folds_from_config, train_valid_split
+from .splits import Fold, auto_folds_from_span, folds_from_config, train_valid_split
 
 log = get_logger(__name__)
 
@@ -44,6 +44,16 @@ class BacktestResult:
 def run_backtest(cfg: AppConfig, dataset: pd.DataFrame,
                  target_col: str = "target_report_max_f") -> BacktestResult:
     folds = folds_from_config(cfg.validation.folds)
+    # If no configured fold's test window intersects the dataset (e.g. a short real-data
+    # span), derive rolling-origin folds from the data itself instead of silently scoring
+    # nothing.
+    if "date" in dataset.columns and len(dataset):
+        d = pd.to_datetime(dataset["date"])
+        if not any(fold.test_mask(dataset["date"]).any() for fold in folds):
+            log.warning("Configured folds do not intersect dataset span %s..%s; "
+                        "deriving rolling-origin folds from the data.",
+                        d.min().date(), d.max().date())
+            folds = auto_folds_from_span(dataset["date"], n_folds=3)
     result = BacktestResult()
     vintages = sorted(dataset["vintage"].unique()) if "vintage" in dataset else ["default"]
     thresholds = (cfg.contracts.example_thresholds if cfg.contracts else {})

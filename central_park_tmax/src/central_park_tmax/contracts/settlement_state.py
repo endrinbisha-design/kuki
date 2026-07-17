@@ -113,6 +113,11 @@ def _select_state(now_utc: datetime, timing: ContractTiming,
         return SettlementState.FORECAST_OPEN
     if now_utc < expiration:
         if not has_report:
+            # Between last trading and the morning report window: trading_closed; once the
+            # report is plausibly due (within ~3h of expiration) and still absent: awaiting.
+            from datetime import timedelta
+            if now_utc < expiration - timedelta(hours=3):
+                return SettlementState.TRADING_CLOSED
             return SettlementState.AWAITING_REPORT
         if review.delayed:
             return SettlementState.CONSISTENCY_REVIEW

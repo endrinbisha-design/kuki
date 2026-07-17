@@ -31,6 +31,48 @@ from .. import __version__
 log = get_logger(__name__)
 
 
+def _select_hyperparameters(cfg: AppConfig, fm_tr, fm_val) -> dict:
+    """Small, time-series-aware hyperparameter search.
+
+    Candidates are scored by MAE on the chronological validation tail (never the test
+    period). Falls back to the configured defaults when search is disabled or the
+    validation tail is too small to rank candidates meaningfully.
+    """
+    b = cfg.models.boosting
+    defaults = dict(n_estimators=b.n_estimators, learning_rate=b.learning_rate,
+                    max_depth=b.max_depth, reg_lambda=b.reg_lambda,
+                    min_child_weight=b.min_child_weight)
+    hp = cfg.models.hyperparameter_search
+    if not hp.enabled or fm_val is None or len(fm_val) < 20:
+        return defaults
+
+    grid = [
+        defaults,
+        {**defaults, "max_depth": 3},
+        {**defaults, "max_depth": 6},
+        {**defaults, "learning_rate": 0.06, "n_estimators": max(200, b.n_estimators // 2)},
+        {**defaults, "learning_rate": 0.015, "n_estimators": b.n_estimators * 2},
+        {**defaults, "reg_lambda": 5.0},
+        {**defaults, "min_child_weight": 10.0},
+        {**defaults, "max_depth": 3, "reg_lambda": 5.0},
+    ][: max(1, hp.max_candidates)]
+
+    best_params, best_mae = defaults, float("inf")
+    for cand in grid:
+        try:
+            m = BoostingResidualModel(
+                backend=b.backend, early_stopping_rounds=b.early_stopping_rounds,
+                random_state=cfg.models.random_seed, **cand,
+            ).fit(fm_tr, valid=fm_val)
+            mae = float(np.mean(np.abs(m.predict(fm_val) - fm_val.y.to_numpy())))
+            if mae < best_mae:
+                best_mae, best_params = mae, cand
+        except Exception as exc:  # noqa: BLE001
+            log.warning("hyperparameter candidate %s failed: %s", cand, exc)
+    log.info("hyperparameter search: best val MAE=%.3f params=%s", best_mae, best_params)
+    return best_params
+
+
 def _git_hash() -> Optional[str]:
     try:
         return subprocess.check_output(["git", "rev-parse", "HEAD"],
@@ -90,15 +132,12 @@ def train_models(cfg: AppConfig, dataset: pd.DataFrame,
                                            feature_names=fm_tr.feature_names)
                   if len(tr_val) else None)
 
+        params = _select_hyperparameters(cfg, fm_tr, fm_val)
         boost = BoostingResidualModel(
             backend=cfg.models.boosting.backend,
-            n_estimators=cfg.models.boosting.n_estimators,
-            learning_rate=cfg.models.boosting.learning_rate,
-            max_depth=cfg.models.boosting.max_depth,
-            reg_lambda=cfg.models.boosting.reg_lambda,
-            min_child_weight=cfg.models.boosting.min_child_weight,
             early_stopping_rounds=cfg.models.boosting.early_stopping_rounds,
             random_state=cfg.models.random_seed,
+            **params,
         ).fit(fm_tr, valid=fm_val)
 
         qmodel = None

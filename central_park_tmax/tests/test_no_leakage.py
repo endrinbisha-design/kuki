@@ -58,3 +58,16 @@ def test_train_mask_excludes_test_period():
     te = fold.test_mask(dates).tolist()
     assert tr == [True, False]
     assert te == [False, True]
+
+
+def test_auto_folds_from_span_are_chronological():
+    from central_park_tmax.evaluation.splits import auto_folds_from_span
+    dates = pd.Series(pd.date_range("2024-11-15", "2025-01-31", freq="D").astype(str))
+    folds = auto_folds_from_span(dates, n_folds=3)
+    assert len(folds) == 3
+    for f in folds:
+        assert f.train_end < f.test_start
+    for a, b in zip(folds, folds[1:]):
+        assert b.test_start > a.test_end
+    # Training window always precedes its test window; first 40% reserved for training.
+    assert folds[0].test_start > pd.Timestamp("2024-12-10").date()

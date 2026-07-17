@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Iterator, Optional
 
+import numpy as np
 import pandas as pd
 
 
@@ -65,6 +66,32 @@ def train_valid_split(train_df: pd.DataFrame, valid_fraction: float = 0.15,
         return df, df.iloc[0:0]
     cut = int(n * (1 - valid_fraction))
     return df.iloc[:cut].reset_index(drop=True), df.iloc[cut:].reset_index(drop=True)
+
+
+def auto_folds_from_span(dates: pd.Series, n_folds: int = 3,
+                         min_train_fraction: float = 0.4) -> list[Fold]:
+    """Derive rolling-origin folds from the dataset's own date span.
+
+    Used when the configured folds don't intersect the data (e.g. a short real-data
+    window). The first ``min_train_fraction`` of the span is always training; the
+    remainder is split into ``n_folds`` consecutive test windows, each trained on
+    everything strictly before it. Chronological, non-overlapping, leakage-safe.
+    """
+    d = pd.to_datetime(dates).sort_values().unique()
+    if len(d) < 10:
+        raise ValueError(f"Too few distinct dates ({len(d)}) to build folds.")
+    start_idx = int(len(d) * min_train_fraction)
+    test_dates = d[start_idx:]
+    chunks = np.array_split(test_dates, n_folds)
+    folds = []
+    for i, chunk in enumerate(c for c in chunks if len(c)):
+        test_start = pd.Timestamp(chunk[0]).date()
+        test_end = pd.Timestamp(chunk[-1]).date()
+        train_end = test_start - timedelta(days=1)
+        folds.append(Fold(index=i, train_end=train_end,
+                          test_start=test_start, test_end=test_end))
+    _validate_non_overlap(folds)
+    return folds
 
 
 def rolling_origin_from_dates(dates: pd.Series, first_test_year: int,

@@ -16,10 +16,10 @@ log = get_logger(__name__)
 def build_observations(cfg: AppConfig, save: bool = True) -> pd.DataFrame:
     http = http_client_from_config(cfg)
     loader = GhcnDailyLoader(http=http, station_id=cfg.station.noaa_station_id)
-    raw_text = loader.download_csv_text()
+    raw_text, csv_format = loader.download_csv_text()
     if save:
         atomic_write_text(Path(cfg.paths.observations_dir) / f"{cfg.station.noaa_station_id}.csv", raw_text)
-    df = loader.parse_csv(raw_text)
+    df = loader.load(csv_text=raw_text, csv_format=csv_format)
     if save and not df.empty:
         proc = Path(cfg.paths.processed_dir) / "observations_daily.csv"
         df.to_csv(proc, index=False)

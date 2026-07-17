@@ -11,7 +11,8 @@ class HrrrForecastSource(HerbieForecastSource):
     name = "hrrr"
     model = "hrrr"
     product = "sfc"
-    cycle_hours = 1
-    latency_hours = 1.5
+    cycle_hours = 6         # use synoptic cycles, which extend to f048
+    latency_hours = 2.0
     tmp_search = ":TMP:2 m above ground:"
     is_ensemble = False
+    max_fxx = 48

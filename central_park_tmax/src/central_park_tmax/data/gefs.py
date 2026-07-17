@@ -20,3 +20,4 @@ class GefsForecastSource(HerbieForecastSource):
     latency_hours = 5.0
     tmp_search = ":TMP:2 m above ground:"
     is_ensemble = True
+    max_fxx = 120

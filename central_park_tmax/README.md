@@ -89,19 +89,24 @@ See `configs/data_sources.yaml` for the authoritative flags. Summary:
 
 | Source | Implemented | Current data | Historical archive | Needs credentials | Needs GRIB |
 |---|---|---|---|---|---|
-| GHCN-Daily (obs, final QC) | ✅ | ✅ | ✅ | no | no |
+| GHCN-Daily (NCEI + AWS mirror fallback) | ✅ | ✅ | ✅ (1869→) | no | no |
 | NWS Daily Climate Report (CLI) | ✅ | ✅ | partial | no | no |
 | NWS observations API (hourly/METAR) | ✅ | ✅ | ✅ | no | no |
-| **NWS gridpoint forecast** (reference source) | ✅ | ✅ | ❌ | no | no |
-| **NBM** (preferred residual baseline) | ✅ adapter | ✅ | ✅ | no | **yes** |
-| HRRR / GFS / GEFS | ✅ adapter | ✅ | ✅ | no | **yes** |
+| **NWS gridpoint forecast** | ✅ | ✅ | ❌ | no | no |
+| **NBM** (preferred residual baseline) | ✅ | ✅ | ✅ (~2020-09→) | no | **yes** |
+| HRRR / GFS / GEFS | ✅ | ✅ | ✅ | no | **yes** |
 | Synthetic (demo/tests only) | ✅ | ✅ | ✅ | no | no |
 
-- The **NWS gridpoint** source is fully wired and needs no GRIB — it is the reference
-  *current-data* forecast source.
-- **NBM/HRRR/GFS/GEFS** are modular adapters over NOAA Open Data on AWS via Herbie + cfgrib.
-  Without those optional deps they raise a documented `ForecastSourceUnavailable`; the pipeline
-  then **falls back explicitly** (see §9) and records the reason — it never fabricates data.
+- **GHCN-Daily** tries the NCEI `access` CSV first and automatically falls back to the NOAA
+  Open Data AWS mirror (`noaa-ghcn-pds`, long format). *Caveat:* the AWS mirror can lag NCEI
+  by days to months — the loader logs the max available date; prefer NCEI where reachable.
+- **NBM/HRRR/GFS/GEFS** read NOAA Open Data on AWS via Herbie + cfgrib with `priority=['aws']`.
+  Byte-range subsetting downloads **only the 2 m temperature message** per forecast hour
+  (~1–2 MB) and deletes each GRIB subset after extraction, so multi-month archive builds use
+  only megabytes of disk. Point extraction is self-contained (no cartopy): nearest grid point
+  on both curvilinear (NBM/HRRR) and rectilinear (GFS/GEFS) grids. Without the GRIB deps these
+  sources raise a documented `ForecastSourceUnavailable`; the pipeline then **falls back
+  explicitly** (see §9) — it never fabricates data.
 - **Synthetic** data are physically-plausible simulations for offline demos/CI/tests **only**,
   always tagged `synthetic_*` in provenance. Never mistaken for a real forecast or report.
 
@@ -122,13 +127,12 @@ pip install -e ".[dev]"          # pytest
 pip install -e ".[grib]"         # xarray + cfgrib + eccodes + Herbie + s3fs
 ```
 
-### GRIB / ecCodes setup (only needed for NBM/HRRR/GFS/GEFS archives)
-`cfgrib` requires the system **ecCodes** library:
+### GRIB / ecCodes setup (only needed for NBM/HRRR/GFS/GEFS)
+Modern `eccodes` pip wheels **bundle the ecCodes binary library** — on most Linux/macOS
+platforms `pip install -e ".[grib]"` is all you need (verified working). If your platform has
+no binary wheel, install ecCodes via conda or apt first:
 ```bash
-# conda (recommended):
-conda install -c conda-forge eccodes cfgrib herbie-data s3fs
-# or Debian/Ubuntu:
-sudo apt-get install libeccodes0 && pip install -e ".[grib]"
+conda install -c conda-forge eccodes cfgrib herbie-data s3fs   # alternative route
 ```
 If ecCodes is missing, GRIB sources raise a clear error and the pipeline uses the NWS gridpoint
 source + fallback hierarchy.
@@ -163,8 +167,11 @@ python -m central_park_tmax build-report-archive --from-file report.txt   # arch
 # 3. (optional) Archive numerical forecast point-features for a date range
 python -m central_park_tmax build-forecast-archive --source nbm --start 2023-01-01 --end 2023-12-31
 
-# 4. Build a leakage-safe dataset (needs a historical forecast archive source)
-python -m central_park_tmax build-dataset --source nbm --start 2023-01-01 --end 2024-12-31
+# 4. Build a leakage-safe dataset from the real NBM archive (AWS). ~20-25 s per
+#    (date, vintage) for byte-range GRIB extraction; start with one vintage:
+python -m central_park_tmax build-dataset --source nbm \
+    --start 2024-11-15 --end 2025-01-31 --vintage prev_evening_19
+#    then widen the range / add vintages as your archive grows.
 
 # 5. Rolling-origin backtest (metrics JSON + plots under reports/)
 python -m central_park_tmax backtest
@@ -304,14 +311,20 @@ fallbacks; required prediction-output fields; and delayed-determination flagging
 
 ## 14. Storage requirements & troubleshooting
 
-- Core pipeline (NWS gridpoint + GHCN + reports): **megabytes**.
-- GRIB archives (NBM/HRRR/GFS/GEFS) can require **many GB** — extract only Central-Park-area point
-  features (this project does) and cache aggressively.
-- **`cannot find eccodes`** → install the system ecCodes lib (see §5).
+- Core pipeline (GHCN + reports + NBM point extraction): **megabytes** — byte-range GRIB
+  subsetting + delete-after-extract keeps even multi-month archive builds tiny on disk.
+  Full-grid GRIB retention (`keep_grib=True`) can require many GB; leave it off.
+- **`cannot find eccodes`** → `pip install eccodes` (wheels bundle the library) or conda (§5).
 - **`ForecastSourceUnavailable`** → expected without GRIB extras; use NWS gridpoint or `--synthetic`.
 - **NWS API 403 / rate limits** → set a contact email in `.env` (`NWS_API_USER_AGENT_EMAIL`) and
   respect the retry/backoff (configured in `configs/default.yaml`).
-- **Network egress blocked** (e.g. sandboxed CI) → NOAA hosts may be unreachable; run `--synthetic`.
+- **Partially blocked egress** (some sandboxes): NCEI, api.weather.gov, and IEM may be
+  unreachable while **AWS Open Data buckets still work** — in that case observations come from
+  the GHCN AWS mirror and forecasts from NBM/HRRR/GFS/GEFS on AWS; only live CLI-report
+  retrieval and the NWS gridpoint source are unavailable (archive reports via `--from-file`).
+- **Fully blocked egress** → run `--synthetic`.
+- **AWS GHCN mirror lag** → the mirror's most recent date can trail NCEI; training labels stop
+  at the mirror's max date. Use NCEI where reachable for fresher labels.
 
 ---
 

@@ -104,9 +104,14 @@ def f_to_c(fahrenheit: float) -> float:
 
 
 # GHCN-Daily bulk CSV endpoints (final QC daily values; NOT the contract label).
+# Primary: NCEI 'access' wide CSV. Fallback: NOAA Open Data on AWS (long format), which is
+# reachable from more network environments (no credentials required for either).
 GHCN_DAILY_CSV_URL = (
     "https://www.ncei.noaa.gov/data/global-historical-climatology-network-daily/access/"
     "{station_id}.csv"
+)
+GHCN_DAILY_S3_CSV_URL = (
+    "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/{station_id}.csv"
 )
 GHCN_DAILY_DLY_URL = (
     "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/{station_id}.dly"

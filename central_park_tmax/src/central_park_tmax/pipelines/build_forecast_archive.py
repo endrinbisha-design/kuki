@@ -28,13 +28,9 @@ def build_forecast_archive(cfg: AppConfig, source: ForecastSource, start: date, 
         for vintage in cfg.forecast_vintages:
             vt = resolve_vintage(d, vintage.day, vintage.hour, vintage.minute, vintage.name)
             issue_utc = to_utc(vt.issue_local)
-            handle = source.select_run(d, issue_utc)
-            if handle is None:
-                continue
-            try:
-                run = source.fetch_run(handle, cfg.locations, d)
-            except Exception as exc:  # noqa: BLE001
-                log.warning("archive fetch failed %s %s: %s", d, vintage.name, exc)
+            run = source.select_and_fetch(d, issue_utc, cfg.locations)
+            if run is None:
+                log.warning("archive: no usable %s run for %s %s", source.name, d, vintage.name)
                 continue
             meta = source.get_metadata(run)
             rows.append({

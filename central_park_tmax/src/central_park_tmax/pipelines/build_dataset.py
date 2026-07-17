@@ -55,6 +55,7 @@ def build_dataset(
     daily_prcp_mm: Optional[pd.Series] = None,
     report_archive: Optional[ReportArchive] = None,
     save: bool = True,
+    vintages: Optional[list[str]] = None,
 ) -> pd.DataFrame:
     if normals is None or daily_tmax_f is None:
         if synthetic:
@@ -65,18 +66,17 @@ def build_dataset(
         else:
             raise ValueError("Non-synthetic dataset build requires normals and daily history.")
 
+    active_vintages = [v for v in cfg.forecast_vintages
+                       if vintages is None or v.name in vintages]
     rows: list[dict] = []
     for target_date in _date_range(start, end):
-        for vintage in cfg.forecast_vintages:
+        for vintage in active_vintages:
             vt = resolve_vintage(target_date, vintage.day, vintage.hour, vintage.minute, vintage.name)
             issue_utc = to_utc(vt.issue_local)
-            run_handle = source.select_run(target_date, issue_utc)
-            if run_handle is None:
-                continue
-            try:
-                run = source.fetch_run(run_handle, cfg.locations, target_date)
-            except Exception as exc:  # noqa: BLE001
-                log.warning("fetch_run failed target=%s vintage=%s: %s", target_date, vintage.name, exc)
+            run = source.select_and_fetch(target_date, issue_utc, cfg.locations)
+            if run is None:
+                log.warning("no usable %s run for target=%s vintage=%s",
+                            source.name, target_date, vintage.name)
                 continue
 
             obs = None
@@ -121,11 +121,15 @@ def _resolve_labels(target_date, synthetic, report_archive, daily_tmax_f):
             ghcn_max = float(ser.loc[key])
     if synthetic:
         return synthetic_report_max_f(target_date), ghcn_max, TargetProvenance.RECONSTRUCTED
-    # real mode: prefer archived report at/around the date
+    # Real mode: archived NWS report is the preferred contract label.
     if report_archive is not None:
         versions = report_archive.versions_for(target_date)
         if versions:
             return int(versions[-1]["reported_max_f"]), ghcn_max, TargetProvenance.NWS_AT_EXPIRATION
+    # Fallback RESEARCH label: GHCN final (explicitly tagged; never conflated with the
+    # contemporaneous report). Rounded to the integer the report would publish.
+    if ghcn_max is not None and not np.isnan(ghcn_max):
+        return int(round(ghcn_max)), ghcn_max, TargetProvenance.GHCN_DAILY_FINAL
     return None, ghcn_max, TargetProvenance.MISSING
 
 

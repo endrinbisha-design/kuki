@@ -83,8 +83,9 @@ def cmd_build_dataset(cfg, args):
     normals, tmax, prcp = _history(cfg, args.synthetic)
     start = _parse_date(args.start) or cfg.archive_start
     end = _parse_date(args.end) or (cfg.archive_end or date.today())
+    vintages = args.vintage.split(",") if getattr(args, "vintage", None) else None
     df = build_dataset(cfg, source, start, end, synthetic=args.synthetic, normals=normals,
-                       daily_tmax_f=tmax, daily_prcp_mm=prcp)
+                       daily_tmax_f=tmax, daily_prcp_mm=prcp, vintages=vintages)
     print(f"Built dataset: {len(df)} rows, {df['vintage'].nunique() if len(df) else 0} vintages.")
 
 
@@ -300,6 +301,8 @@ def build_parser() -> argparse.ArgumentParser:
     fa.add_argument("--source", default=None); fa.add_argument("--start", default=None); fa.add_argument("--end", default=None)
     bd = add("build-dataset", cmd_build_dataset)
     bd.add_argument("--source", default=None); bd.add_argument("--start", default=None); bd.add_argument("--end", default=None)
+    bd.add_argument("--vintage", default=None,
+                    help="Comma-separated vintage names to build (default: all configured)")
     add("backtest", cmd_backtest)
     add("train", cmd_train)
     add("predict-tomorrow", cmd_predict_tomorrow).add_argument("--source", default=None)

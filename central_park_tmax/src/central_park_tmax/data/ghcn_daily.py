@@ -18,7 +18,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from ..constants import GHCN_DAILY_CSV_URL, c_to_f
+from ..constants import GHCN_DAILY_CSV_URL, GHCN_DAILY_S3_CSV_URL, c_to_f
 from ..logging_config import get_logger
 from . import ObservationError
 from .storage import HttpClient
@@ -38,20 +38,81 @@ class GhcnDailyLoader:
     http: HttpClient
     station_id: str = "USW00094728"
 
-    def download_csv_text(self, use_cache: bool = True) -> str:
-        url = GHCN_DAILY_CSV_URL.format(station_id=self.station_id)
-        log.info("Downloading GHCN-Daily CSV: %s", url)
-        return self.http.get_text(url, use_cache=use_cache)
+    def download_csv_text(self, use_cache: bool = True) -> tuple[str, str]:
+        """Download the station CSV, trying NCEI first, then the AWS Open Data mirror.
 
-    def load(self, csv_text: Optional[str] = None, use_cache: bool = True) -> pd.DataFrame:
+        Returns (csv_text, format) where format is 'wide' (NCEI access CSV) or
+        'long' (AWS by_station CSV: ID,DATE,ELEMENT,DATA_VALUE,M_FLAG,Q_FLAG,S_FLAG,OBS_TIME).
+        """
+        primary = GHCN_DAILY_CSV_URL.format(station_id=self.station_id)
+        fallback = GHCN_DAILY_S3_CSV_URL.format(station_id=self.station_id)
+        try:
+            log.info("Downloading GHCN-Daily CSV (NCEI): %s", primary)
+            # Single attempt for the primary: if NCEI is blocked/down we fall over to the
+            # AWS mirror quickly instead of burning the full retry/backoff budget.
+            import dataclasses
+            quick = dataclasses.replace(self.http, max_retries=0)
+            return quick.get_text(primary, use_cache=use_cache), "wide"
+        except Exception as exc:  # noqa: BLE001
+            log.warning("NCEI GHCN download failed (%s); trying AWS Open Data mirror.",
+                        str(exc)[:200])
+        log.info("Downloading GHCN-Daily CSV (AWS): %s", fallback)
+        return self.http.get_text(fallback, use_cache=use_cache), "long"
+
+    def load(self, csv_text: Optional[str] = None, use_cache: bool = True,
+             csv_format: Optional[str] = None) -> pd.DataFrame:
         """Return a tidy daily frame indexed by local calendar date.
 
         Columns include tmax_c/tmax_f, tmin_c/tmin_f, prcp_mm, snow_mm, snwd_mm and the
         associated M/Q/S flag columns where present.
         """
         if csv_text is None:
-            csv_text = self.download_csv_text(use_cache=use_cache)
+            csv_text, csv_format = self.download_csv_text(use_cache=use_cache)
+        if csv_format is None:
+            # Sniff: the long format's header starts with 'ID,DATE,ELEMENT'.
+            csv_format = "long" if csv_text[:30].startswith("ID,DATE,ELEMENT") else "wide"
+        if csv_format == "long":
+            return self.parse_long_csv(csv_text)
         return self.parse_csv(csv_text)
+
+    def parse_long_csv(self, csv_text: str) -> pd.DataFrame:
+        """Parse the AWS Open Data by-station long-format CSV into the same tidy frame."""
+        raw = pd.read_csv(io.StringIO(csv_text), dtype=str, low_memory=False)
+        required = {"DATE", "ELEMENT", "DATA_VALUE"}
+        if not required.issubset(raw.columns):
+            raise ObservationError(
+                f"GHCN long CSV missing columns {required - set(raw.columns)}; "
+                "schema may have changed."
+            )
+        raw = raw[raw["ELEMENT"].isin(CORE_ELEMENTS)].copy()
+        raw["value"] = pd.to_numeric(raw["DATA_VALUE"], errors="coerce")
+        raw["date"] = pd.to_datetime(raw["DATE"], format="%Y%m%d", errors="coerce").dt.date
+
+        out = pd.DataFrame({"date": sorted(raw["date"].dropna().unique())})
+        for elem in CORE_ELEMENTS:
+            sub = raw[raw["ELEMENT"] == elem]
+            if sub.empty:
+                continue
+            series = sub.set_index("date")["value"]
+            series = series[~series.index.duplicated(keep="first")]
+            vals = out["date"].map(series)
+            if elem in TENTHS_C_ELEMENTS:
+                celsius = vals / 10.0
+                out[f"{elem.lower()}_c"] = celsius
+                out[f"{elem.lower()}_f"] = celsius.apply(
+                    lambda v: c_to_f(v) if pd.notna(v) else np.nan)
+            elif elem in TENTHS_MM_ELEMENTS:
+                out[f"{elem.lower()}_mm"] = vals / 10.0
+            for flag_col, fname in (("M_FLAG", "mflag"), ("Q_FLAG", "qflag"), ("S_FLAG", "sflag")):
+                if flag_col in sub.columns:
+                    fseries = sub.set_index("date")[flag_col]
+                    fseries = fseries[~fseries.index.duplicated(keep="first")]
+                    out[f"{elem.lower()}_{fname}"] = out["date"].map(fseries).replace("", np.nan)
+
+        out = out.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+        out["station_id"] = self.station_id
+        out["provenance"] = "ghcn_daily_final"
+        return out
 
     def parse_csv(self, csv_text: str) -> pd.DataFrame:
         raw = pd.read_csv(io.StringIO(csv_text), dtype=str, low_memory=False)
