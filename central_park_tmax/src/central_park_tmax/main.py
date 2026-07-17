@@ -150,6 +150,23 @@ def cmd_generate_report(cfg, args):
     print(render_forecast_text(read_json(p)))
 
 
+def cmd_backtest_strategies(cfg, args):
+    from .pipelines.backtest_strategies import run_strategy_backtest
+    df = _load_dataset(cfg, args)
+    out = run_strategy_backtest(cfg, df,
+                                use_simulated_market=not args.real_market)
+    print(f"Strategy backtest over {out['n_days']} out-of-sample days "
+          f"(market: {out['market_source']})")
+    print(f"NOTE: {out['market_disclaimer']}")
+    for s in out["strategies"]:
+        if s.get("n_trades", 0) == 0:
+            print(f"  {s['strategy']:16} no trades")
+            continue
+        print(f"  {s['strategy']:16} trades={s['n_trades']:4d} win={s['win_rate']*100:5.1f}% "
+              f"net=${s['net_pnl']:8.2f} (fees ${s['fees']:.2f}) "
+              f"ROI={s['roi_on_risked']*100:6.1f}% maxDD=${s['max_drawdown']:.2f}")
+
+
 def cmd_demo(cfg, args):
     """Full offline synthetic end-to-end smoke test."""
     from .config import FoldCfg
@@ -304,6 +321,9 @@ def build_parser() -> argparse.ArgumentParser:
     bd.add_argument("--vintage", default=None,
                     help="Comma-separated vintage names to build (default: all configured)")
     add("backtest", cmd_backtest)
+    bs = add("backtest-strategies", cmd_backtest_strategies)
+    bs.add_argument("--real-market", action="store_true",
+                    help="Use real Kalshi prices (requires network access to Kalshi API)")
     add("train", cmd_train)
     add("predict-tomorrow", cmd_predict_tomorrow).add_argument("--source", default=None)
     pa = add("predict-at-time", cmd_predict_at_time)

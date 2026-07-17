@@ -308,6 +308,34 @@ state.
 
 ---
 
+## 11b. Strategy backtesting (research only — no order placement)
+
+`python -m central_park_tmax backtest-strategies [--real-market]` evaluates three
+strategies on Kalshi-style NYC-high bucket ladders (low tail "K or below", inclusive
+2 °F bands, high tail "K or above" — exact NHIGH boundary semantics):
+
+1. **`edge_flat_8c`** — buy 1 contract of YES/NO whenever the model's probability beats
+   the ask by >8¢. Flat stakes.
+2. **`kelly_25pct`** — same signal, stake = 25% fractional Kelly, capped at 10 contracts.
+3. **`tail_fade`** — buy NO on longshot buckets priced 5–20¢ that the model deems at
+   most half as likely (favorite–longshot-bias harvesting).
+
+Mechanics: model PMFs are strictly **walk-forward out-of-sample** (each test day is
+predicted by a model trained only on earlier days); ladders center on the issue-time NBM
+baseline (no lookahead); settlement uses the recorded integer outcome and Kalshi taker
+fees `ceil(0.07·C·P·(1−P))`; metrics include win rate, net P&L, ROI on risked capital,
+and max drawdown.
+
+Market prices come from `data/kalshi.py`:
+- `--real-market` uses the **public Kalshi trade API** (settled KXHIGHNY markets +
+  candlestick entry prices at/before the issue time). Requires network access to
+  `api.elections.kalshi.com` — some sandboxes block it.
+- default is a **clearly-labeled simulated market maker** (Normal pricer anchored on the
+  same NBM guidance, daily mispricing noise, spread; deterministic per date). Results
+  against it are *research diagnostics of strategy behavior*, **not** realized-P&L claims.
+
+The project never automates trading or order placement.
+
 ## 12. Reproducibility
 
 Pinned dependency lower bounds; fixed random seeds; deterministic options where available; saved
