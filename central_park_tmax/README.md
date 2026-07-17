@@ -116,6 +116,32 @@ See `configs/data_sources.yaml` for the authoritative flags. Summary:
 
 ---
 
+## 4b. Robustness guards against out-of-envelope corrections
+
+A residual booster extrapolates its learned correction *flat* into feature space it never
+trained on, so a model trained on one season can over-correct in another. Observed live: an
+Aug–Jan model applied a **+4.05 °F** warm correction to a July frontal-cooldown day that NBM,
+HRRR, and GFS all placed within 0.9 °F of each other (and the market priced correctly). Three
+layers address this, most-fundamental first:
+
+1. **Inter-model features in training** (`pipelines/merge_forecast_archives.py`). HRRR/GFS
+   point archives are joined onto the dataset as `intermodel_spread_f`, `intermodel_range_f`,
+   and `baseline_minus_{hrrr,gfs}_f`. The booster then *learns* "tight NWP consensus ⇒ small
+   correction" natively. On the live case this alone pulled the raw correction from **+4.05 →
+   +1.45 °F** — the fix at the source, no runtime clamp needed. (Aggregate MAE barely moves,
+   because these features matter on rare tail days, not the average day.)
+2. **Consensus cap** (`models/ood_guard.py`, predict-time). When live secondary-model maxima
+   are supplied, the correction is clipped to `2 × inter-model-spread` (min ±1.5 °F). A
+   redundant safety net once (1) is trained in, but active whenever the archive is thin.
+3. **Out-of-distribution shrink** (`models/ood_guard.py`, predict-time). Each trained model
+   stores its feature envelope (`FeatureStats`); at predict time, corrections shrink toward
+   the raw baseline (floor 0.25×) as key features leave that envelope. Reported per forecast
+   (`ood_score`, `ood_shrink`) so a shrunk prediction is visibly flagged.
+
+Guards only ever **attenuate toward the trustworthy baseline** — they never add.
+
+---
+
 ## 5. Installation
 
 ```bash
