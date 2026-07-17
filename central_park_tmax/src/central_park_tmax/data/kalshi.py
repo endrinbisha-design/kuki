@@ -145,6 +145,44 @@ class KalshiMarketDataSource:
         return DayMarket(target_date=target_date, buckets=buckets, quotes=quotes,
                         source="kalshi")
 
+    def live_day_market(self, target_date: date) -> DayMarket:
+        """Current open ladder with executable quotes from the live order books.
+
+        yes_bid = best resting YES bid; yes_ask = 1 - best resting NO bid (buying YES
+        crosses the NO book). Markets with an empty book are skipped.
+        """
+        tag = target_date.strftime("%y%b%d").upper()
+        url = f"{KALSHI_API_BASE}/markets?series_ticker={self.series}&status=open&limit=100"
+        data = self.http.get_json(url, use_cache=False)
+        markets = [m for m in data.get("markets", []) if tag in m.get("ticker", "")]
+        quotes: list[MarketQuote] = []
+        buckets: list[Bucket] = []
+        for m in markets:
+            bucket = self._bucket_from_market(m)
+            if bucket is None:
+                continue
+            ob = self.http.get_json(
+                f"{KALSHI_API_BASE}/markets/{m['ticker']}/orderbook?depth=10",
+                use_cache=False)
+            book = ob.get("orderbook_fp") or ob.get("orderbook") or {}
+            yes_levels = book.get("yes_dollars") or book.get("yes") or []
+            no_levels = book.get("no_dollars") or book.get("no") or []
+            if not yes_levels and not no_levels:
+                continue
+            best_yes_bid = max((float(p) for p, _ in yes_levels), default=None)
+            best_no_bid = max((float(p) for p, _ in no_levels), default=None)
+            yes_ask = round(1.0 - best_no_bid, 4) if best_no_bid is not None else None
+            no_ask = round(1.0 - best_yes_bid, 4) if best_yes_bid is not None else None
+            if yes_ask is None or no_ask is None:
+                continue
+            mid = round(((best_yes_bid or yes_ask) + yes_ask) / 2.0, 4)
+            buckets.append(bucket)
+            quotes.append(MarketQuote(bucket=bucket, yes_ask=yes_ask, no_ask=no_ask, mid=mid))
+        if not quotes:
+            raise MarketDataUnavailable(f"No live priced Kalshi markets for {target_date}.")
+        return DayMarket(target_date=target_date, buckets=buckets, quotes=quotes,
+                        source="kalshi_live")
+
     def _settled_markets_for(self, target_date: date) -> list[dict]:
         # Kalshi day tickers look like KXHIGHNY-25JAN15-...
         tag = target_date.strftime("%y%b%d").upper()
@@ -155,16 +193,33 @@ class KalshiMarketDataSource:
 
     @staticmethod
     def _bucket_from_market(m: dict) -> Optional[Bucket]:
+        """Map Kalshi strike semantics onto integer buckets EXACTLY.
+
+        Kalshi 'greater' settles YES iff value > floor_strike (strict) and 'less' iff
+        value < cap_strike (strict). With integer NWS outcomes, an INTEGER strike must
+        therefore shift by one: greater floor=90 -> settles at >=91; less cap=83 ->
+        settles at <=82. Half-point strikes (89.5) round to the enclosed integer.
+        Verified against the live ladder: T90 'greater' sits above B89.5 (89-90), so
+        the tail must start at 91 or the buckets would overlap.
+        """
         st = m.get("strike_type")
         if st == "between":
             return Bucket("between", int(math.ceil(float(m["floor_strike"]))),
                           int(math.floor(float(m["cap_strike"]))))
         if st in ("less", "less_or_equal"):
             k = float(m["cap_strike"])
-            return Bucket("le", int(math.floor(k)), int(math.floor(k)))
+            if st == "less" and k == int(k):
+                bound = int(k) - 1          # strictly below an integer strike
+            else:
+                bound = int(math.floor(k))
+            return Bucket("le", bound, bound)
         if st in ("greater", "greater_or_equal"):
             k = float(m["floor_strike"])
-            return Bucket("ge", int(math.ceil(k)), int(math.ceil(k)))
+            if st == "greater" and k == int(k):
+                bound = int(k) + 1          # strictly above an integer strike
+            else:
+                bound = int(math.ceil(k))
+            return Bucket("ge", bound, bound)
         return None
 
     def _entry_price(self, ticker: str, issue_ts_utc) -> Optional[float]:

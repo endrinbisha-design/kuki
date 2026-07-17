@@ -111,3 +111,20 @@ def test_summary_accounts_fees_and_roi():
     assert abs(s["net_pnl"] - 0.58) < 1e-9
     assert abs(s["fees"] - 0.02) < 1e-9
     assert abs(s["roi_on_risked"] - 0.58 / 0.40) < 1e-6
+
+
+def test_kalshi_integer_strikes_are_strict():
+    from central_park_tmax.data.kalshi import KalshiMarketDataSource
+    f = KalshiMarketDataSource._bucket_from_market
+    # 'greater' floor=90 is STRICT: settles YES only at >= 91 (the live ladder's B89.5
+    # bucket covers 89-90, so the tail must start at 91).
+    ge = f({"strike_type": "greater", "floor_strike": 90})
+    assert not ge.settles_yes(90) and ge.settles_yes(91)
+    # 'less' cap=83 is STRICT: YES only at <= 82 (B83.5 covers 83-84).
+    le = f({"strike_type": "less", "cap_strike": 83})
+    assert le.settles_yes(82) and not le.settles_yes(83)
+    # Half-point strikes keep their natural integer bound.
+    ge_h = f({"strike_type": "greater", "floor_strike": 89.5})
+    assert ge_h.settles_yes(90) and not ge_h.settles_yes(89)
+    b = f({"strike_type": "between", "floor_strike": 87, "cap_strike": 88})
+    assert b.settles_yes(87) and b.settles_yes(88) and not b.settles_yes(89)
