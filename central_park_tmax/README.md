@@ -178,17 +178,21 @@ The full real-data path has been exercised end-to-end against live NOAA sources:
 - **Training set:** 184 consecutive days of archived NBM runs (2024-08-01 → 2025-01-31,
   previous-evening vintage, 3-hourly trajectory, zero gaps), labels = GHCN final
   (provenance `ghcn_daily_final`).
-- **Rolling-origin backtest** (3 folds, 111 out-of-sample days):
+- **Rolling-origin backtest** (3 folds, 111 out-of-sample days), by forecast vintage:
 
-  | model | MAE (°F) | mean error | within ±2 °F |
-  |---|---|---|---|
-  | raw NBM | 2.20 | −1.61 | 50 % |
-  | rolling 30-day bias | 1.85 | −0.30 | 65 % |
-  | ridge residual | 3.78 | +0.95 | 28 % |
-  | **boosted residual** | **1.71** | **−0.22** | **67 %** |
+  | vintage | model | MAE (°F) | within ±2 °F | exact-integer | top-two |
+  |---|---|---|---|---|---|
+  | prev-evening (7 PM) | raw NBM | 2.20 | 50 % | — | — |
+  | prev-evening (7 PM) | **boosted residual** | **1.70** | 67 % | 18.9 % | 35.1 % |
+  | **target-day 4 PM** | obs-constrained NBM | 1.40 | 82 % | — | — |
+  | **target-day 4 PM** | **boosted residual** | **1.24** | **84 %** | **41.4 %** | **67.6 %** |
 
-  The production model beats raw NBM by **22 %** and removes its −1.6 °F cold bias.
-  Integer-report distribution: exact-integer hit 20.7 %, top-two 34.2 %, log-loss 2.91.
+  The prev-evening model beats raw NBM by 22 % and removes its −1.6 °F cold bias. The
+  **intraday 4 PM model** is far sharper — by mid-afternoon the observed max is largely
+  locked in (reconstructed from METAR 6-hour max groups + the intraday CLI, not just coarse
+  hourly snapshots), so it nails the exact published integer ~42 % of the time and is
+  top-two ~68 %. Its observation-constrained baseline `max(observed-so-far, forecast-remaining)`
+  is 1.40 °F MAE before any ML correction.
 - **Strategy backtest** (walk-forward PMFs, simulated market — see §11b): edge-flat
   +20.5 % ROI on risked capital over 310 trades; 25 % Kelly +$277 net with ~7× the
   drawdown; tail-fade 96.9 % win rate on 128 small NO trades.
