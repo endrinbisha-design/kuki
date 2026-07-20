@@ -1,0 +1,31 @@
+089
+CDUS41 KOKX 202037
+CLINYC
+
+CLIMATE REPORT
+NATIONAL WEATHER SERVICE NEW YORK, NY
+437 PM EDT MON JUL 20 2026
+
+...................................
+
+...THE CENTRAL PARK NY CLIMATE SUMMARY FOR JULY 20 2026...
+VALID TODAY AS OF 0400 PM LOCAL TIME.
+
+CLIMATE NORMAL PERIOD 1991 TO 2020
+CLIMATE RECORD PERIOD 1869 TO 2026
+
+
+WEATHER ITEM   OBSERVED TIME   RECORD YEAR NORMAL DEPARTURE LAST
+                VALUE   (LST)  VALUE       VALUE  FROM      YEAR
+                                                  NORMAL
+...................................................................
+TEMPERATURE (F)
+ TODAY
+  MAXIMUM         81    125 PM 101 1980  85    -4        88
+  MINIMUM         63    541 AM  55 1890  71    -8        75
+  AVERAGE         72                     78    -6        82
+
+PRECIPITATION (IN)
+  TODAY            0.00          1.97 1889  0.16  -0.16       T
+
+$$

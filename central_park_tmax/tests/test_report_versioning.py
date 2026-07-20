@@ -52,3 +52,29 @@ def test_parse_failure_raises_not_guess():
     from central_park_tmax.data import ReportParseError
     with pytest.raises(ReportParseError):
         parse_climate_report("this is not a climate report at all", source="bad")
+
+
+def test_intraday_preliminary_report_detected(report_fixtures):
+    # Real CLI issued 4:37 PM "VALID TODAY AS OF 0400 PM" -> max SO FAR, not final.
+    text = _load(report_fixtures, "clinyc_20260720_intraday_preliminary.txt")
+    rep = parse_climate_report(text, source="fixture")
+    assert rep.target_date.isoformat() == "2026-07-20"
+    assert rep.reported_max_f == 81
+    assert rep.max_time_lst == "125 PM"
+    assert rep.status == "intraday_preliminary"
+    assert rep.is_intraday_preliminary is True
+    assert rep.valid_as_of_lst == "0400 PM"
+
+
+def test_intraday_prelim_then_final_are_separate_versions(tmp_path, report_fixtures):
+    from datetime import date, datetime, timezone
+    from central_park_tmax.data.report_archive import ReportArchive
+    archive = ReportArchive(tmp_path / "v.jsonl")
+    now = datetime.now(tz=timezone.utc)
+    intraday = parse_climate_report(
+        _load(report_fixtures, "clinyc_20260720_intraday_preliminary.txt"), source="f")
+    archive.add_version(intraday, now, "f")
+    versions = archive.versions_for(date(2026, 7, 20))
+    assert len(versions) == 1
+    assert versions[0]["status"] == "intraday_preliminary"
+    assert versions[0]["is_intraday_preliminary"] is True

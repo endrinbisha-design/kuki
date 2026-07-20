@@ -48,6 +48,15 @@ _SUMMARY_DATE_RE = re.compile(
 
 # Correction / status markers.
 _CORRECTED_RE = re.compile(r"\bCORRECT(?:ED|ION)\b", re.IGNORECASE)
+# Intraday preliminary marker, e.g. "VALID TODAY AS OF 0400 PM LOCAL TIME."
+# These same-day issuances report the maximum SO FAR (a lower bound on the final value),
+# and are distinct from the next-morning final report (which summarizes YESTERDAY).
+_VALID_AS_OF_RE = re.compile(
+    r"VALID\s+TODAY\s+AS\s+OF\s+(?P<time>\d{3,4})\s*(?P<ampm>AM|PM)\s+LOCAL\s+TIME",
+    re.IGNORECASE,
+)
+# Whether the temperature block is labeled TODAY (intraday) vs YESTERDAY (final).
+_TODAY_ROW_RE = re.compile(r"TEMPERATURE\s*\(F\)\s*\n\s*TODAY", re.IGNORECASE)
 _MON3 = {m.upper()[:3]: i for i, m in enumerate(
     ["", "January", "February", "March", "April", "May", "June", "July",
      "August", "September", "October", "November", "December"], start=0)}
@@ -61,10 +70,12 @@ class ClimateReport:
     max_time_lst: Optional[str]
     issuance_local: Optional[datetime]
     issuance_utc: Optional[datetime]
-    status: str                       # preliminary | corrected | unknown
+    status: str                       # intraday_preliminary | preliminary | corrected | unknown
     issuing_office: Optional[str]
     product_id: Optional[str]
     raw_text: str
+    is_intraday_preliminary: bool = False   # same-day "VALID TODAY AS OF ..." issuance
+    valid_as_of_lst: Optional[str] = None   # the "as of" time for intraday reports
     # optional extras parsed when present:
     reported_min_f: Optional[int] = None
     parse_warnings: list[str] = field(default_factory=list)
@@ -79,6 +90,8 @@ class ClimateReport:
             "issuance_local": self.issuance_local.isoformat() if self.issuance_local else None,
             "issuance_utc": self.issuance_utc.strftime("%Y-%m-%dT%H:%M:%SZ") if self.issuance_utc else None,
             "status": self.status,
+            "is_intraday_preliminary": self.is_intraday_preliminary,
+            "valid_as_of_lst": self.valid_as_of_lst,
             "issuing_office": self.issuing_office,
             "product_id": self.product_id,
             "retrieved_at_utc": retrieved_at_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -200,9 +213,21 @@ def parse_climate_report(raw_text: str, retrieved_at_utc: Optional[datetime] = N
     target = _parse_target_date(raw_text, warnings)
     max_f, max_time, min_f = _parse_temperature_block(raw_text, warnings)
     issuance_local, issuance_utc = _parse_header_timestamp(raw_text, warnings)
-    status = "corrected" if _CORRECTED_RE.search(raw_text) else "preliminary"
     product_id = _parse_product_id(raw_text)
     office = _parse_issuing_office(raw_text)
+
+    # Status: corrections win; otherwise an intraday "VALID TODAY AS OF ..." same-day
+    # issuance (max SO FAR) is distinguished from the next-morning final report.
+    valid_as_of = _VALID_AS_OF_RE.search(raw_text)
+    is_intraday = bool(valid_as_of) or bool(_TODAY_ROW_RE.search(raw_text))
+    valid_as_of_lst = (re.sub(r"\s+", " ", f"{valid_as_of.group('time')} {valid_as_of.group('ampm')}").strip()
+                       if valid_as_of else None)
+    if _CORRECTED_RE.search(raw_text):
+        status = "corrected"
+    elif is_intraday:
+        status = "intraday_preliminary"
+    else:
+        status = "preliminary"
 
     from ..constants import MIN_PLAUSIBLE_TMAX_F, MAX_PLAUSIBLE_TMAX_F
     if not (MIN_PLAUSIBLE_TMAX_F <= max_f <= MAX_PLAUSIBLE_TMAX_F):
@@ -221,6 +246,8 @@ def parse_climate_report(raw_text: str, retrieved_at_utc: Optional[datetime] = N
         issuing_office=office,
         product_id=product_id,
         raw_text=raw_text,
+        is_intraday_preliminary=is_intraday,
+        valid_as_of_lst=valid_as_of_lst,
         reported_min_f=min_f,
         parse_warnings=warnings,
     )
