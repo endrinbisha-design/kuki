@@ -92,9 +92,14 @@ def build_feature_row(
     }
 
     # --- direct guidance ---
-    baseline = primary_run.daily_max_f(primary_key, target_date)
-    row["baseline_tmax_f"] = baseline
+    forecast_daily_max = primary_run.daily_max_f(primary_key, target_date)
+    row["forecast_daily_max_f"] = forecast_daily_max
     row["primary_lead_hours"] = primary_run.lead_time_hours(target_date)
+    # baseline_tmax_f is set below: for prev-day vintages it is the full-day forecast max;
+    # for intraday vintages an intraday run only forecasts the REMAINING hours, so the
+    # physically-correct baseline is max(observed-so-far, forecast-remaining) — computed
+    # after the intraday block once observed_max_so_far is known.
+    baseline = forecast_daily_max
 
     # inter-model features
     model_maxes = {primary_run.source: baseline}
@@ -153,6 +158,21 @@ def build_feature_row(
                                  forecast_remaining_max_f=remaining_max,
                                  same_hour_forecast_temp_f=same_hour_fc,
                                  intraday_report_max_f=intraday_report_max_f))
+
+    # --- observation-constrained baseline ---
+    # Intraday: baseline = max(observed-so-far, forecast over remaining hours). The full-day
+    # forecast max (forecast_daily_max) already equals the remaining-hours max for an intraday
+    # run (it cannot forecast the past), so this reduces to the physically-correct floor.
+    observed_max = row.get("observed_max_so_far_f")
+    if (observed_max is not None and not (isinstance(observed_max, float) and np.isnan(observed_max))):
+        components = [observed_max]
+        if remaining_max is not None:
+            components.append(remaining_max)
+        elif forecast_daily_max is not None:
+            components.append(forecast_daily_max)
+        row["baseline_tmax_f"] = float(max(components))
+    else:
+        row["baseline_tmax_f"] = forecast_daily_max
     return row
 
 

@@ -56,6 +56,7 @@ def build_dataset(
     report_archive: Optional[ReportArchive] = None,
     save: bool = True,
     vintages: Optional[list[str]] = None,
+    obs_history: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     if normals is None or daily_tmax_f is None:
         if synthetic:
@@ -101,6 +102,11 @@ def build_dataset(
             obs = None
             if synthetic:
                 obs = synthetic_observation_frame(target_date, up_to_utc=issue_utc)
+            elif obs_history is not None:
+                # Real intraday obs truncated at the issue time (no lookahead): only rows
+                # at/before issue_utc feed the observed-max-so-far and intraday features.
+                ts = pd.to_datetime(obs_history["timestamp_utc"], utc=True, errors="coerce")
+                obs = obs_history.loc[ts <= pd.Timestamp(issue_utc)]
 
             row = build_feature_row(
                 target_date=target_date, vintage_name=vintage.name, issue_local=vt.issue_local,

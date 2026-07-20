@@ -85,8 +85,22 @@ def cmd_build_dataset(cfg, args):
     start = _parse_date(args.start) or cfg.archive_start
     end = _parse_date(args.end) or (cfg.archive_end or date.today())
     vintages = args.vintage.split(",") if getattr(args, "vintage", None) else None
+
+    # For real intraday vintages (issued on the target day), fetch the historical
+    # sub-hourly observation archive so observed-max-so-far is reconstructed correctly.
+    obs_history = None
+    active = [v for v in cfg.forecast_vintages if vintages is None or v.name in vintages]
+    needs_obs = not args.synthetic and any(v.day == "target_day" for v in active)
+    if needs_obs:
+        from datetime import timedelta
+        from .data.historical_obs import load_historical_obs
+        obs_history = load_historical_obs(
+            http_client_from_config(cfg), start - timedelta(days=1), end + timedelta(days=1))
+        log.info("Loaded %d historical obs rows for intraday features.", len(obs_history))
+
     df = build_dataset(cfg, source, start, end, synthetic=args.synthetic, normals=normals,
-                       daily_tmax_f=tmax, daily_prcp_mm=prcp, vintages=vintages)
+                       daily_tmax_f=tmax, daily_prcp_mm=prcp, vintages=vintages,
+                       obs_history=obs_history)
     print(f"Built dataset: {len(df)} rows, {df['vintage'].nunique() if len(df) else 0} vintages.")
 
 
