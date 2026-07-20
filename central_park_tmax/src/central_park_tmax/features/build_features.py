@@ -73,6 +73,7 @@ def build_feature_row(
     extra_runs: Optional[dict] = None,
     trajectory_hours: Optional[list[int]] = None,
     reporting_method: str = "round_half_up",
+    intraday_report_max_f: Optional[float] = None,
 ) -> dict:
     trajectory_hours = trajectory_hours or [0, 3, 6, 9, 12, 15, 18, 21]
     issue_utc = to_utc(issue_local)
@@ -150,7 +151,8 @@ def build_feature_row(
     remaining_max = _remaining_forecast_max(primary_run, primary_key, target_date, issue_utc)
     row.update(intraday_features(obs, target_date, issue_utc,
                                  forecast_remaining_max_f=remaining_max,
-                                 same_hour_forecast_temp_f=same_hour_fc))
+                                 same_hour_forecast_temp_f=same_hour_fc,
+                                 intraday_report_max_f=intraday_report_max_f))
     return row
 
 

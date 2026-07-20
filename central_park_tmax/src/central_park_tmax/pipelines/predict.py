@@ -79,12 +79,20 @@ def predict_one(
     if synthetic and obs is None:
         obs = synthetic_observation_frame(target_date, up_to_utc=issue_utc)
 
+    # Same-day forecast: try the intraday CLI (authoritative max-so-far / settlement
+    # source) issued at/before the issue time. Only used for a target date that is 'today'
+    # locally, and only if the report's target matches (no lookahead).
+    intraday_cli_max = None
+    if not synthetic and target_date == to_local(issue_utc).date():
+        intraday_cli_max = _try_intraday_cli_max(cfg, target_date, issue_utc)
+
     row = build_feature_row(
         target_date=target_date, vintage_name=vintage_name, issue_local=issue_local,
         primary_run=run, locations=cfg.locations, normals=normals,
         daily_tmax_f=daily_tmax_f, daily_prcp_mm=daily_prcp_mm, obs=obs,
         trajectory_hours=cfg.trajectory_hours_local,
         reporting_method=cfg.reporting_convention.method,
+        intraday_report_max_f=intraday_cli_max,
     )
     baseline = row.get("baseline_tmax_f")
     observed_max = row.get("observed_max_so_far_f")
@@ -209,6 +217,7 @@ def predict_one(
         "forecast_issued_at_utc": isoformat_utc(issue_utc),
         "last_observation_at_local": _last_obs_local(obs),
         "observed_max_so_far_f": None if observed_max is None or (isinstance(observed_max, float) and np.isnan(observed_max)) else round(float(observed_max), 1),
+        "observed_max_so_far_source": row.get("observed_max_so_far_source"),
         "predicted_continuous_tmax_f": round(point, 2),
         "predicted_continuous_tmax_c": round(f_to_c(point), 2),
         "median_tmax_f": round(p50, 2),
@@ -273,6 +282,32 @@ def _last_obs_local(obs: Optional[pd.DataFrame]) -> Optional[str]:
     if ts.empty:
         return None
     return isoformat_local(ts.max().to_pydatetime())
+
+
+def _try_intraday_cli_max(cfg, target_date, issue_utc) -> Optional[float]:
+    """Fetch today's intraday CLI max if issued at/before ``issue_utc`` (no lookahead).
+
+    Returns the reported max only when a report for ``target_date`` was released at/before
+    the prediction time. Any failure (network, no report yet, parse) returns None quietly —
+    the observed-max reconstruction then falls back to the METAR sources.
+    """
+    try:
+        from ..data.nws_api import NwsApiClient
+        from ..data.nws_climate_report import parse_climate_report
+        from ..data.storage import http_client_from_config
+        client = NwsApiClient(http_client_from_config(cfg))
+        text, _ = client.latest_central_park_cli()
+        report = parse_climate_report(text, source="intraday_predict")
+        if report.target_date != target_date:
+            return None
+        if report.issuance_utc is not None and report.issuance_utc > issue_utc:
+            return None  # report issued after the prediction time -> leakage; ignore
+        log.info("Intraday CLI available for %s: max-so-far %sF (status=%s)",
+                 target_date, report.reported_max_f, report.status)
+        return float(report.reported_max_f)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("No usable intraday CLI for %s: %s", target_date, exc)
+        return None
 
 
 def _climate_normal_fallback(cfg, target_date, vintage_name, issue_local, normals,

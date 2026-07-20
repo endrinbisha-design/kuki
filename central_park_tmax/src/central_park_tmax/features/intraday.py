@@ -21,11 +21,16 @@ def intraday_features(
     issue_utc: datetime,
     forecast_remaining_max_f: Optional[float] = None,
     same_hour_forecast_temp_f: Optional[float] = None,
+    intraday_report_max_f: Optional[float] = None,
 ) -> dict:
     """Build intraday features from observations available up to ``issue_utc``.
 
     ``obs`` must have 'timestamp_utc' and 'temp_f'. Only obs within the local target day and
     at/before issue time are used (leakage-safe by construction).
+
+    ``observed_max_so_far_f`` uses the best-available reconstruction — hourly snapshots,
+    METAR 6-hour max groups, and an intraday CLI max when supplied — so it matches the NWS
+    report peak rather than under-sampling it (see hourly_observations.max_so_far_with_provenance).
     """
     out: dict[str, float] = {
         "hours_remaining_in_day": float(hours_remaining_in_local_day(issue_utc, target_date)),
@@ -48,8 +53,14 @@ def intraday_features(
         return out
 
     out["is_intraday"] = 1.0
-    obs_max = max(temps)
+    from ..data.hourly_observations import max_so_far_with_provenance
+    best_max, best_src = max_so_far_with_provenance(
+        obs, target_date, issue_utc, intraday_report_max_f=intraday_report_max_f)
+    obs_max = best_max if best_max is not None else max(temps)
     out["observed_max_so_far_f"] = obs_max
+    out["observed_max_snapshot_f"] = max(temps)          # the coarse hourly max (for reference)
+    out["observed_max_source_cli"] = 1.0 if best_src == "nws_cli_intraday" else 0.0
+    out["observed_max_so_far_source"] = best_src         # str; excluded from design matrix
     out["current_temp_f"] = temps[-1]
     # Observed warming rate over the last few hours (F/hour).
     if len(temps) >= 3:

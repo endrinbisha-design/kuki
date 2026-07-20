@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional
 
-from ..constants import NWS_API_BASE, NWS_CLI_ISSUING_OFFICE
+from ..constants import NWS_API_BASE, NWS_CLI_LOCATION
 from ..logging_config import get_logger
 from ..time_utils import now_utc
 from . import DataSourceError
@@ -28,9 +28,9 @@ class NwsApiClient:
         self.base = base.rstrip("/")
 
     # ---- CLI text products -----------------------------------------------------------
-    def list_cli_products(self, office: str = NWS_CLI_ISSUING_OFFICE) -> list[dict[str, Any]]:
+    def list_cli_products(self, location: str = NWS_CLI_LOCATION) -> list[dict[str, Any]]:
         """List recent CLI (Daily Climate Report) products from an issuing office."""
-        url = f"{self.base}/products/types/CLI/locations/{office}"
+        url = f"{self.base}/products/types/CLI/locations/{location}"
         data = self.http.get_json(url, use_cache=False)
         return data.get("@graph", data.get("products", []))
 
@@ -43,23 +43,16 @@ class NwsApiClient:
             raise DataSourceError(f"No productText in NWS product response for {product_id}")
         return text, data.get("issuanceTime")
 
-    def latest_central_park_cli(self, office: str = NWS_CLI_ISSUING_OFFICE) -> tuple[str, Optional[str]]:
+    def latest_central_park_cli(self, location: str = NWS_CLI_LOCATION) -> tuple[str, Optional[str]]:
         """Fetch the most recent Central Park CLI product text.
 
-        The OKX office issues CLI for several sites; we select the Central Park (NYC)
-        product by AWIPS/product id hint, else the newest.
+        The ``NYC`` location returns only the Central Park (CLINYC) products, so we simply
+        take the newest by issuance time (this includes the afternoon intraday preliminary).
         """
-        products = self.list_cli_products(office=office)
+        products = self.list_cli_products(location=location)
         if not products:
-            raise DataSourceError(f"No CLI products returned for office {office}")
-        # Prefer product ids that reference NYC/Central Park.
-        def _score(p: dict) -> tuple[int, str]:
-            pid = (p.get("productCode", "") + p.get("id", "") + p.get("productName", "")).upper()
-            wmo = p.get("wmoCollectiveId", "")
-            issued = p.get("issuanceTime", "")
-            return (0 if "NYC" in pid else 1, issued)
-        products_sorted = sorted(products, key=lambda p: p.get("issuanceTime", ""), reverse=True)
-        chosen = min(products_sorted, key=_score)
+            raise DataSourceError(f"No CLI products returned for location {location}")
+        chosen = max(products, key=lambda p: p.get("issuanceTime", ""))
         return self.get_product_text(chosen.get("@id") or chosen.get("id"))
 
     # ---- Gridpoint forecast (fully-implemented forecast source) ----------------------

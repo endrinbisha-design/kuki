@@ -120,7 +120,11 @@ GHCN_DAILY_DLY_URL = (
 # NWS text-product API (Daily Climate Report). CLI product for the NYC area.
 NWS_API_BASE = "https://api.weather.gov"
 NWS_CLI_PRODUCT_CODE = "CLI"          # Daily Climate Report product type
-NWS_CLI_ISSUING_OFFICE = "OKX"        # NWS New York, NY (Upton) issues Central Park CLI
+NWS_CLI_ISSUING_OFFICE = "OKX"        # NWS New York, NY (Upton) — the issuing WFO
+# The text-products API indexes CLI by LOCATION code, which for the Central Park report is
+# "NYC" (NOT the office "OKX"; /products/types/CLI/locations/OKX returns empty). Verified
+# live: the NYC location returns the CLINYC products incl. the intraday preliminary.
+NWS_CLI_LOCATION = "NYC"
 NWS_CLI_PRODUCT_ID_HINT = "CLINYC"    # AWIPS/product id substring for Central Park CLI
 
 # Reporting-convention version tag default.

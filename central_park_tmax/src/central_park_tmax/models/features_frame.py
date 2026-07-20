@@ -18,6 +18,8 @@ RESERVED_COLUMNS = {
     "date", "target_date", "target", "target_report_max_f", "target_ghcn_max_f",
     "baseline_tmax_f", "settlement_eligible_max_f", "vintage", "provenance",
     "forecast_issue_local", "forecast_issue_utc", "source",
+    "observed_max_so_far_source", "target_provenance", "forecast_init_utc",
+    "forecast_source", "forecast_model_version",
 }
 
 
