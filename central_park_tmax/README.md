@@ -140,6 +140,37 @@ layers address this, most-fundamental first:
 
 Guards only ever **attenuate toward the trustworthy baseline** — they never add.
 
+### Real-time temperature-trend (nowcasting) features
+
+Motivated live (2026-07-21): the temperature stalled at 75 °F all morning under pre-storm
+clouds while the model — running off NBM forecast cycles — still expected ~80 °F, and the
+market (watching the live thermometer) correctly leaned lower. The model was blind to the
+observation *trajectory*. Added leakage-safe intraday features: recent warming rate
+(1/2/3 h), time-since-observed-max, drop-from-peak, a `stalled_before_peak_flag`, and a
+`headroom_minus_trend_support_f` (how much of NBM's remaining warming the live trend
+actually supports). A fixed-hyperparameter, rolling-origin **ablation** decided their fate
+honestly:
+
+| vintage | without trend | with trend |
+|---|---|---|
+| noon (target_12) | 1.564 | 1.545 (neutral) |
+| **4 PM (target_16)** | 1.368 | **1.106 (~19 % better)** |
+
+They clearly help the 4 PM model (post-peak cooling + time-since-peak confirm the high is
+locked in) and are neutral at noon, so they are **kept as model inputs**. They are *also*
+surfaced in every prediction's `trend_diagnostics` block so a human sees "stalled" on a
+day like Jul 21 regardless of how the model weights it. (An initial single-subset read
+hinted at overfitting on the 35-day stall slice; the full-vintage ablation did not bear
+that out — a reminder to ablate on the whole vintage, not a cherry-picked subset.)
+
+### Intraday vintages
+
+Dedicated same-day models converge as the day progresses (rolling-origin MAE): prev-evening
+**1.70** → noon **1.60** → 4 PM **1.17** °F. The 4 PM model hits the exact published integer
+~42 % of the time (top-two ~69 %) because by mid-afternoon the observed max is largely
+locked in — reconstructed from METAR 6-hour max groups and the intraday CLI, not coarse
+hourly snapshots (see §4c).
+
 ---
 
 ## 5. Installation

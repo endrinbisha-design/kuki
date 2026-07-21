@@ -22,6 +22,20 @@ RESERVED_COLUMNS = {
     "forecast_source", "forecast_model_version",
 }
 
+# Real-time temperature-trend features. These are BOTH fed to the model (they are numeric
+# and not reserved) AND surfaced in the prediction output as human-facing nowcasting
+# diagnostics. A leakage-safe, fixed-hyperparameter ablation showed they clearly help the
+# 4 PM (target_16) vintage — WITHOUT 1.368 F MAE vs WITH 1.106 F, ~19% better, because the
+# post-peak cooling trend and time-since-peak confirm the high is already locked in — and
+# are neutral at noon (target_12: 1.564 vs 1.545). They are therefore KEPT as model
+# features. (An initial single-subset read suggested overfitting on the 35-day stall slice;
+# the full-vintage ablation did not bear that out.) See README section 4b.
+TREND_DIAGNOSTIC_COLUMNS = {
+    "stalled_before_peak_flag", "cooling_before_peak_flag",
+    "warming_rate_recent_3h_f_per_h", "hours_since_observed_max",
+    "headroom_minus_trend_support_f",
+}
+
 
 @dataclass
 class FeatureMatrix:

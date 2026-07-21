@@ -218,6 +218,17 @@ def predict_one(
         "last_observation_at_local": _last_obs_local(obs),
         "observed_max_so_far_f": None if observed_max is None or (isinstance(observed_max, float) and np.isnan(observed_max)) else round(float(observed_max), 1),
         "observed_max_so_far_source": row.get("observed_max_so_far_source"),
+        # Human-facing nowcasting diagnostics (NOT model inputs; see features_frame
+        # DIAGNOSTIC_ONLY_COLUMNS). On a stalled-temperature day these flag that the live
+        # trajectory is running below the forecast, even though the model does not weight them.
+        "trend_diagnostics": {
+            k: (round(float(row[k]), 2) if isinstance(row.get(k), (int, float)) and not
+                (isinstance(row.get(k), float) and np.isnan(row[k])) else row.get(k))
+            for k in ("stalled_before_peak_flag", "cooling_before_peak_flag",
+                      "warming_rate_recent_3h_f_per_h", "hours_since_observed_max",
+                      "headroom_minus_trend_support_f")
+            if k in row
+        },
         "predicted_continuous_tmax_f": round(point, 2),
         "predicted_continuous_tmax_c": round(f_to_c(point), 2),
         "median_tmax_f": round(p50, 2),
