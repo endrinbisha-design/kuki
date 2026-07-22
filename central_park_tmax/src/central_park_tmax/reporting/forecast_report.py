@@ -21,6 +21,10 @@ def render_forecast_text(record: Mapping) -> str:
         lo, hi = record["interval_80_f"]
         lines.append(f"  80% interval        : [{lo}, {hi}] °F")
     lines.append(f"  fallback level      : {record.get('fallback_level')}  model: {record.get('model_name')}")
+    if record.get("regime"):
+        adv = "" if record.get("regime_weighting_enabled") else " (advisory)"
+        lines.append(f"  regime{adv:11}: {record['regime']} -> weighted "
+                     f"{record.get('regime_weighted_tmax_f')} °F | {record.get('regime_rationale')}")
 
     pmf = record.get("integer_report_probabilities", {})
     if pmf:

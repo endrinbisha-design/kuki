@@ -140,6 +140,26 @@ layers address this, most-fundamental first:
 
 Guards only ever **attenuate toward the trustworthy baseline** — they never add.
 
+### Regime weighting (opt-in advisory add-on)
+
+From live trading days (`track_record/`): the *right* forecast source is regime-dependent —
+on **storm/cloud-suppressed days NBM + NWS run cooler and verify** while raw HRRR/GFS run too
+hot, and on **clean/sunny days the high-res HRRR/GFS warmth verifies** while NBM/NWS come in
+cool. `models/regime_weighting.py` classifies the regime from **precipitation probability**
+(the physical direction-setter — high PoP ⇒ suppression, low PoP ⇒ let it warm) plus the
+NBM-vs-high-res disagreement (magnitude), and produces a transparent, configurable
+regime-weighted blend of the model maxima.
+
+**This is a physically-motivated *prior*, not a fitted/backtested model** (the Aug–Jan archive
+has too few convective days to fit it honestly). So it ships **off by default and advisory
+only**: every prediction reports `regime`, `regime_weighted_tmax_f`, and `regime_rationale`
+alongside the model output, but the point forecast is unchanged unless
+`regime_weighting.enabled: true` (then it blends by `blend_strength`). Validate it against the
+accumulating `track_record/` (whose `log_call.py summary` already reports per-regime "closest
+source") and a future convective-day backtest before trusting it beyond a tie-breaker. Live
+example: for a sunny 7%-PoP day it flags `clean_warm → lean high-res` and nudges ~+1.7 °F
+above the NBM-anchored model point — the exact adjustment that would have helped this week.
+
 ### Real-time temperature-trend (nowcasting) features
 
 Motivated live (2026-07-21): the temperature stalled at 75 °F all morning under pre-storm

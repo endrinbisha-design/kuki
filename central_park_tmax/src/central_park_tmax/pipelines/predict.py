@@ -129,6 +129,35 @@ def predict_one(
                             cons.spread_f, cons.cap_f,
                             cons.correction_before_f, cons.correction_after_f)
             ood_info.update(cons.to_dict())
+        # Regime-weighting add-on (advisory by default; opt-in blend). Uses NBM baseline +
+        # any supplied HRRR/GFS maxima + PoP from the feature row. See models/regime_weighting.
+        regime_info = {}
+        rw = getattr(cfg, "regime_weighting", None)
+        if rw is not None:
+            from ..models.regime_weighting import blend_with_model, classify_regime
+            # PoP is the reliable regime direction-setter; prefer the row's value, else
+            # fetch the NWS gridpoint PoP (advisory; best-effort, non-synthetic only).
+            pop = row.get("pop_day_max_pct")
+            if pop is None and not synthetic:
+                pop = _try_forecast_pop(cfg, target_date)
+            assess = classify_regime(
+                nbm_f=float(baseline),
+                hrrr_f=(secondary_tmax_f or {}).get("hrrr"),
+                gfs_f=(secondary_tmax_f or {}).get("gfs"),
+                pop_pct=pop,
+                pop_storm_threshold=rw.pop_storm_threshold,
+                pop_clean_threshold=rw.pop_clean_threshold,
+                nbm_cool_threshold_f=rw.nbm_cool_threshold_f,
+                weights=(rw.weights or None),
+            )
+            regime_info = assess.to_dict()
+            regime_info["regime_weighting_enabled"] = bool(rw.enabled)
+            if rw.enabled and assess.weighted_tmax_f is not None:
+                before = point
+                point = blend_with_model(point, assess, strength=rw.blend_strength)
+                log.info("Regime blend (%s): %.2fF -> %.2fF (strength %.2f)",
+                         assess.regime, before, point, rw.blend_strength)
+        ood_info.update(regime_info)
         residuals = model.oos_residuals
         attributions = _local_attributions(model, fm)
         model_name = f"{model.boosting.name}"
@@ -293,6 +322,30 @@ def _last_obs_local(obs: Optional[pd.DataFrame]) -> Optional[str]:
     if ts.empty:
         return None
     return isoformat_local(ts.max().to_pydatetime())
+
+
+def _try_forecast_pop(cfg, target_date) -> Optional[float]:
+    """Best-effort max probability-of-precipitation over the target local day from the NWS
+    gridpoint forecast. Used only by the advisory regime classifier; None on any failure."""
+    try:
+        from ..data.nws_api import NwsApiClient
+        from ..data.storage import http_client_from_config
+        from ..time_utils import is_in_local_day, to_utc
+        import pandas as pd
+        client = NwsApiClient(http_client_from_config(cfg))
+        gj = client.gridpoint_forecast_hourly(cfg.station.latitude, cfg.station.longitude)
+        pops = []
+        for p in gj.get("properties", {}).get("periods", []):
+            t = p.get("startTime")
+            pop = (p.get("probabilityOfPrecipitation") or {}).get("value")
+            if t and pop is not None:
+                tt = to_utc(pd.to_datetime(t).to_pydatetime())
+                if is_in_local_day(tt, target_date):
+                    pops.append(float(pop))
+        return max(pops) if pops else None
+    except Exception as exc:  # noqa: BLE001
+        log.debug("No forecast PoP for %s: %s", target_date, exc)
+        return None
 
 
 def _try_intraday_cli_max(cfg, target_date, issue_utc) -> Optional[float]:

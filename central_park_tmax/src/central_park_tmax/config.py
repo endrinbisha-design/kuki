@@ -130,6 +130,21 @@ class ContractRulesCfg(BaseModel):
     version: str = "nhigh_v1"
 
 
+class RegimeWeightingCfg(BaseModel):
+    """Opt-in, advisory regime-weighting add-on (see models/regime_weighting.py).
+
+    ``enabled=False`` => advisory only: the regime label + regime-weighted estimate are
+    REPORTED alongside the model output but do not change the point forecast. Set enabled
+    plus a ``blend_strength`` in (0,1] to nudge the point toward the regime estimate.
+    """
+    enabled: bool = False
+    blend_strength: float = 0.5
+    pop_storm_threshold: float = 50.0
+    pop_clean_threshold: float = 25.0
+    nbm_cool_threshold_f: float = 2.0
+    weights: dict = Field(default_factory=dict)   # empty => module DEFAULT_WEIGHTS
+
+
 class LocationPoint(BaseModel):
     key: str
     name: str
@@ -193,6 +208,7 @@ class AppConfig(BaseModel):
     http: HttpCfg = Field(default_factory=HttpCfg)
     reporting_convention: ReportingConventionCfg = Field(default_factory=ReportingConventionCfg)
     contract_rules: ContractRulesCfg = Field(default_factory=ContractRulesCfg)
+    regime_weighting: RegimeWeightingCfg = Field(default_factory=RegimeWeightingCfg)
 
     # Loaded from separate files:
     locations: Optional[LocationsCfg] = None
