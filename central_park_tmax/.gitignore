@@ -38,3 +38,9 @@ data_phoenix/**
 models_phoenix/**
 reports_phoenix/figures/**
 reports_phoenix/metrics/**
+
+# Las Vegas third-city port (same policy as Phoenix): bulk data/models ephemeral.
+data_vegas/**
+models_vegas/**
+reports_vegas/figures/**
+reports_vegas/metrics/**

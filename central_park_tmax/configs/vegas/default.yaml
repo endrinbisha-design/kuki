@@ -1,0 +1,116 @@
+# Las Vegas Harry Reid Intl (KLAS) configuration — third-city port of the KNYC MOS stack.
+# Mirrors configs/phoenix; the notable difference from Phoenix is that Nevada OBSERVES DST
+# (America/Los_Angeles), whereas Arizona does not.
+
+station:
+  name: "LAS VEGAS HARRY REID INTL AP, NV US"
+  shorthand: "KLAS"
+  noaa_station_id: "USW00023169"   # GHCN-Daily id (Harry Reid / McCarran)
+  wban: "23169"
+  icao: "KLAS"
+  latitude: 36.0839
+  longitude: -115.1537
+  elevation_m: 664.5                # Harry Reid field elevation (~2181 ft)
+  timezone: "America/Los_Angeles"   # Pacific, observes DST (unlike Phoenix)
+
+paths:
+  data_dir: "data_vegas"
+  raw_dir: "data_vegas/raw"
+  observations_dir: "data_vegas/raw/observations"
+  forecasts_dir: "data_vegas/raw/forecasts"
+  nws_reports_dir: "data_vegas/raw/nws_reports"
+  interim_dir: "data_vegas/interim"
+  processed_dir: "data_vegas/processed"
+  predictions_dir: "data_vegas/predictions"
+  settlement_dir: "data_vegas/settlement"
+  models_dir: "models_vegas"
+  reports_dir: "reports_vegas"
+  figures_dir: "reports_vegas/figures"
+  metrics_dir: "reports_vegas/metrics"
+
+forecast_vintages:
+  - { name: "prev_evening_19", day: "prev_day", hour: 19, minute: 0 }
+  - { name: "target_06",       day: "target_day", hour: 6,  minute: 0 }
+  - { name: "target_12",       day: "target_day", hour: 12, minute: 0 }
+  - { name: "target_16",       day: "target_day", hour: 16, minute: 0 }
+  - { name: "target_20",       day: "target_day", hour: 20, minute: 0 }
+  - { name: "target_23",       day: "target_day", hour: 23, minute: 0 }
+
+trajectory_hours_local: [0, 3, 6, 9, 12, 15, 18, 21]
+
+active_forecast_sources:
+  - "nws_gridpoint"
+  - "nbm"
+  - "hrrr"
+  - "gfs"
+  - "gefs"
+
+baseline_source_preference: ["nbm", "hrrr", "gfs", "gefs", "nws_gridpoint"]
+
+archive:
+  start_date: "2019-01-01"
+  end_date: null
+
+models:
+  random_seed: 20240101
+  residual_target: true
+  boosting:
+    backend: "auto"
+    n_estimators: 600
+    learning_rate: 0.03
+    max_depth: 4
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_lambda: 1.0
+    min_child_weight: 5.0
+    early_stopping_rounds: 50
+  quantiles: [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]
+  hyperparameter_search:
+    enabled: true
+    max_candidates: 8
+
+uncertainty:
+  methods: ["quantile_gbm", "empirical_residual"]
+  n_simulation_draws: 20000
+
+validation:
+  scheme: "rolling_origin"
+  folds:
+    - { train_end: "2024-10-31", test_start: "2024-11-01", test_end: "2024-11-30" }
+    - { train_end: "2024-11-30", test_start: "2024-12-01", test_end: "2024-12-31" }
+    - { train_end: "2024-12-31", test_start: "2025-01-01", test_end: "2025-01-31" }
+  min_train_days: 60
+
+logging:
+  level: "INFO"
+  json: false
+
+http:
+  timeout_seconds: 30
+  max_retries: 4
+  backoff_seconds: 2.0
+  cache_enabled: true
+  user_agent: "central_park_tmax/0.1 (research; contact via NWS_API_USER_AGENT_EMAIL)"
+
+reporting_convention:
+  version: "nws_cli_v1"
+  method: "round_half_up"
+
+contract_rules:
+  version: "nhigh_v1"
+
+# Desert regime thresholds (same rationale as Phoenix).
+regime_weighting:
+  enabled: false
+  blend_strength: 0.5
+  pop_storm_threshold: 40.0
+  pop_clean_threshold: 20.0
+  nbm_cool_threshold_f: 2.5
+  weights: {}
+
+# Station-specific external identifiers for live retrieval.
+market:
+  cli_location: "LAS"        # NWS CLI location index for Las Vegas (office is VEF)
+  cli_product_id_hint: "CLILAS"
+  kalshi_series: "KXHIGHTLV"
+  iem_station: "LAS"         # KLAS on the NV_ASOS network

@@ -1,0 +1,37 @@
+# NHIGH temperature-contract configuration for Las Vegas (Kalshi KXHIGHTLV).
+# Underlying: NWS Daily Climate Report for Las Vegas (CLI location "LAS", office VEF),
+# whole degrees F.
+
+version: "nhigh_v1"
+
+underlying:
+  description: "NWS Daily Climate Report Las Vegas Harry Reid maximum temperature (whole degrees F)."
+  location: "Las Vegas NV"
+  section: "Temperature"
+  column: "Yesterday"
+  row: "Maximum"
+  unit: "degF"
+
+timing:
+  timezone: "America/Los_Angeles"   # Pacific, observes DST
+  last_trading_local: { hour: 23, minute: 59 }
+  normal_expiration_candidate_hours: [7, 8]
+  delayed_determination_local: { hour: 11, minute: 0 }
+
+review_triggers:
+  - "reported_high_inconsistent_with_6h_metar_max"
+  - "reported_high_inconsistent_with_24h_metar_max"
+  - "final_reported_high_lower_than_earlier_report"
+metar_consistency_tolerance_f: 1.0
+
+# Desert summer strikes (routine 105-115F in Jun-Aug, similar to Phoenix).
+example_thresholds:
+  greater_than: [105, 108, 110, 112, 115]
+  less_than: [100, 105, 108, 110, 112]
+  ranges_inclusive:
+    - [106, 108]
+    - [108, 110]
+    - [110, 112]
+
+polling:
+  report_poll_interval_seconds: 900

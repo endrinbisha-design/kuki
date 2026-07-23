@@ -1,0 +1,32 @@
+# Las Vegas valley points for spatial forecast extraction and gradient features.
+# Like Phoenix, the desert analog of NYC's marine/inland gradients is urban-core vs
+# outlying-desert and valley-floor vs higher-terrain (the valley is ringed by mountains,
+# with Creech/Indian Springs sitting ~300 m higher to the NW). Signal is expected to be
+# modest — desert valley max temp is spatially homogeneous.
+
+primary:
+  key: "harry_reid"
+  name: "Las Vegas Harry Reid Intl"
+  icao: "KLAS"
+  latitude: 36.0839
+  longitude: -115.1537
+  role: "target"
+
+neighbors:
+  - { key: "north_las_vegas", name: "North Las Vegas",        icao: "KVGT", latitude: 36.2107, longitude: -115.1944, role: "urban_airport" }
+  - { key: "henderson",       name: "Henderson (SE valley)",  icao: "KHND", latitude: 35.9728, longitude: -115.1344, role: "urban_airport" }
+  - { key: "nellis",          name: "Nellis AFB (NE valley)", icao: "KLSV", latitude: 36.2361, longitude: -115.0342, role: "urban_core" }
+  - { key: "boulder_city",    name: "Boulder City (SE)",      icao: "KBVU", latitude: 35.9475, longitude: -114.8611, role: "rural_desert" }
+  - { key: "creech",          name: "Creech/Indian Springs (higher NW desert)", icao: "KINS", latitude: 36.5872, longitude: -115.6725, role: "rural_desert" }
+
+gradient_pairs:
+  - { name: "las_minus_creech",     a: "harry_reid", b: "creech" }
+  - { name: "las_minus_nellis",     a: "harry_reid", b: "nellis" }
+  - { name: "henderson_minus_las",  a: "henderson",  b: "harry_reid" }
+  - { name: "nellis_minus_creech",  a: "nellis",     b: "creech" }
+  - { name: "boulder_minus_las",    a: "boulder_city", b: "harry_reid" }
+
+spatial_extraction:
+  default_method: "bilinear"
+  neighborhood_radius_km: 25.0
+  idw_power: 2.0
