@@ -1,0 +1,37 @@
+# NHIGH temperature-contract configuration for Phoenix (Kalshi KXHIGHTPHX).
+# The authoritative underlying is the maximum temperature published in the NWS
+# Daily Climate Report for Phoenix (CLI location "PHX", office PSR), whole degrees F.
+
+version: "nhigh_v1"
+
+underlying:
+  description: "NWS Daily Climate Report Phoenix Sky Harbor maximum temperature (whole degrees F)."
+  location: "Phoenix AZ"
+  section: "Temperature"
+  column: "Yesterday"
+  row: "Maximum"
+  unit: "degF"
+
+timing:
+  timezone: "America/Phoenix"   # NO DST
+  last_trading_local: { hour: 23, minute: 59 }
+  normal_expiration_candidate_hours: [7, 8]
+  delayed_determination_local: { hour: 11, minute: 0 }
+
+review_triggers:
+  - "reported_high_inconsistent_with_6h_metar_max"
+  - "reported_high_inconsistent_with_24h_metar_max"
+  - "final_reported_high_lower_than_earlier_report"
+metar_consistency_tolerance_f: 1.0
+
+# Desert summer strikes run far hotter than NYC (routine 105-115F in Jun-Aug).
+example_thresholds:
+  greater_than: [105, 108, 110, 112, 115]
+  less_than: [100, 105, 108, 110, 112]
+  ranges_inclusive:
+    - [106, 108]
+    - [108, 110]
+    - [110, 112]
+
+polling:
+  report_poll_interval_seconds: 900

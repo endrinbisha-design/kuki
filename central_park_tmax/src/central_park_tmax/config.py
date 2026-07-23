@@ -130,6 +130,19 @@ class ContractRulesCfg(BaseModel):
     version: str = "nhigh_v1"
 
 
+class MarketCfg(BaseModel):
+    """Station-specific external-identifier overrides for live retrieval.
+
+    Defaults preserve the original KNYC/Central Park behavior so existing configs
+    that omit this section are unchanged. A second city (e.g. Phoenix) sets these to
+    point the CLI settlement fetch, Kalshi market, and IEM archive at its own station.
+    """
+    cli_location: str = "NYC"            # NWS text-products CLI location index (NOT the WFO)
+    cli_product_id_hint: str = "CLINYC"  # AWIPS/product-id substring for this station's CLI
+    kalshi_series: str = "KXHIGHNY"      # Kalshi daily-high series ticker
+    iem_station: str = "NYC"             # IEM ASOS station id for historical hourly obs
+
+
 class RegimeWeightingCfg(BaseModel):
     """Opt-in, advisory regime-weighting add-on (see models/regime_weighting.py).
 
@@ -209,6 +222,7 @@ class AppConfig(BaseModel):
     reporting_convention: ReportingConventionCfg = Field(default_factory=ReportingConventionCfg)
     contract_rules: ContractRulesCfg = Field(default_factory=ContractRulesCfg)
     regime_weighting: RegimeWeightingCfg = Field(default_factory=RegimeWeightingCfg)
+    market: MarketCfg = Field(default_factory=MarketCfg)
 
     # Loaded from separate files:
     locations: Optional[LocationsCfg] = None

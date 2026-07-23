@@ -31,3 +31,10 @@ reports/settlement/**
 # Keep fixtures (they are checked in intentionally)
 !tests/fixtures/**
 !**/.gitkeep
+
+# Phoenix second-city port: keep config in git, but bulk data/models/figures ephemeral
+# (same policy as the NYC data/ tree above; results are captured in committed summary docs).
+data_phoenix/**
+models_phoenix/**
+reports_phoenix/figures/**
+reports_phoenix/metrics/**

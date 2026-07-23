@@ -1,0 +1,36 @@
+# Phoenix "Valley of the Sun" points for spatial forecast extraction and gradient
+# features. The desert analog of NYC's marine/inland gradients is urban-core vs
+# rural-desert (urban heat island) and valley-floor vs higher-terrain, since there
+# is no coastline. Signal is expected to be weaker than NYC's (the valley max temp
+# is spatially homogeneous) — that homogeneity is exactly why Phoenix is "easier".
+
+primary:
+  key: "sky_harbor"
+  name: "Phoenix Sky Harbor Intl"
+  icao: "KPHX"
+  latitude: 33.4278
+  longitude: -112.0037
+  role: "target"
+
+neighbors:
+  - { key: "deer_valley",  name: "Deer Valley (North Valley)",   icao: "KDVT", latitude: 33.6883, longitude: -112.0826, role: "urban_airport" }
+  - { key: "gateway",      name: "Phoenix-Mesa Gateway (SE)",    icao: "KIWA", latitude: 33.3078, longitude: -111.6558, role: "urban_airport" }
+  - { key: "scottsdale",   name: "Scottsdale (NE Valley)",       icao: "KSDL", latitude: 33.6229, longitude: -111.9106, role: "urban_core" }
+  - { key: "glendale",     name: "Glendale (West Valley)",       icao: "KGEU", latitude: 33.5269, longitude: -112.2949, role: "urban_airport" }
+  - { key: "chandler",     name: "Chandler (SE Valley)",         icao: "KCHD", latitude: 33.2692, longitude: -111.8112, role: "urban_airport" }
+  - { key: "buckeye",      name: "Buckeye (rural W desert)",     icao: "KBXK", latitude: 33.4200, longitude: -112.6861, role: "rural_desert" }
+  - { key: "casa_grande",  name: "Casa Grande (rural S desert)", icao: "KCGZ", latitude: 32.9549, longitude: -111.7666, role: "rural_desert" }
+  - { key: "falcon_field", name: "Falcon Field (E Mesa)",        icao: "KFFZ", latitude: 33.4608, longitude: -111.7283, role: "urban_airport" }
+
+# Spatial gradient pairs (a_minus_b): urban-heat-island and valley-position signals.
+gradient_pairs:
+  - { name: "phx_minus_deervalley",   a: "sky_harbor", b: "deer_valley" }
+  - { name: "phx_minus_gateway",      a: "sky_harbor", b: "gateway" }
+  - { name: "buckeye_minus_phx",      a: "buckeye",    b: "sky_harbor" }
+  - { name: "casagrande_minus_phx",   a: "casa_grande", b: "sky_harbor" }
+  - { name: "gateway_minus_deervalley", a: "gateway",  b: "deer_valley" }
+
+spatial_extraction:
+  default_method: "bilinear"
+  neighborhood_radius_km: 25.0
+  idw_power: 2.0

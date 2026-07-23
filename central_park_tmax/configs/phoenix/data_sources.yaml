@@ -1,0 +1,100 @@
+# Capability matrix for each data source. This is the single honest place that
+# documents what is fully wired vs. interface-only in this build. The pipeline
+# reads these flags and NEVER silently substitutes an unavailable source.
+#
+# capability flags:
+#   implemented        : loader code exists and parses real payloads
+#   current_data       : can fetch the latest / live data
+#   historical_archive : can fetch point-in-time historical runs/records
+#   requires_credentials
+#   requires_grib      : needs cfgrib/eccodes/xarray (system ecCodes library)
+#   optional           : pipeline runs without it
+
+observations:
+  ghcn_daily:
+    implemented: true
+    current_data: true
+    historical_archive: true
+    requires_credentials: false
+    requires_grib: false
+    optional: false
+    notes: >
+      Bulk GHCN-Daily for USW00094728: NCEI 'access' CSV primary with automatic fallback to
+      the NOAA Open Data AWS mirror (noaa-ghcn-pds, long format). Final QC values (research
+      labels / climatology; not the contract label). The AWS mirror can lag NCEI by days to
+      months - check the max date and prefer NCEI when reachable.
+  hourly_lcd:
+    implemented: false
+    current_data: false
+    historical_archive: true
+    optional: true
+    notes: "NOAA Local Climatological Data. Interface stub; raises NotImplementedError with guidance."
+  metar_isd:
+    implemented: true
+    current_data: true
+    historical_archive: true
+    optional: true
+    notes: "METAR / ISD parsing for 6h & 24h max cross-checks. Live via aviationweather/NWS; archive via ISD."
+
+nws_climate_report:
+  implemented: true
+  current_data: true
+  historical_archive: partial
+  requires_credentials: false
+  optional: false
+  notes: >
+    Central Park NWS Daily Climate Report (product CLINYC / NYCCLINYC family).
+    Live retrieval via NWS text-product API. Historical versions are archived as
+    retrieved; deep back-archive relies on IEM/NWS archives and is documented as
+    partial. Checked-in fixtures exercise the parser and versioning logic.
+
+forecast_sources:
+  nws_gridpoint:
+    implemented: true
+    current_data: true
+    historical_archive: false
+    requires_credentials: false
+    requires_grib: false
+    optional: false
+    notes: "api.weather.gov gridpoint forecast (JSON). Fully implemented current-data baseline; no historical archive."
+  nbm:
+    implemented: true          # fully working: real point extraction verified against AWS
+    current_data: true         # AWS Open Data (noaa-nbm-grib2-pds), aws-only priority
+    historical_archive: true   # same bucket, back to ~2020-09
+    requires_credentials: false
+    requires_grib: true        # pip 'eccodes' wheels bundle the ecCodes binary
+    optional: false
+    notes: >
+      Preferred residual baseline. Byte-range subsetting downloads only the 2 m temperature
+      message per forecast hour (~1-2 MB); GRIB subsets are deleted after extraction.
+      Raises documented ForecastSourceUnavailable when cfgrib/Herbie are missing.
+  hrrr:
+    implemented: true
+    current_data: true
+    historical_archive: true
+    requires_grib: true
+    optional: true
+    notes: "AWS Open Data noaa-hrrr-bdp-pds via Herbie. GRIB extras required."
+  gfs:
+    implemented: true
+    current_data: true
+    historical_archive: true
+    requires_grib: true
+    optional: true
+    notes: "AWS Open Data noaa-gfs-bdp-pds via Herbie. GRIB extras required."
+  gefs:
+    implemented: true
+    current_data: true
+    historical_archive: true
+    requires_grib: true
+    optional: true
+    notes: "AWS Open Data noaa-gefs-pds (ensemble) via Herbie. GRIB extras required."
+  synthetic:
+    implemented: true
+    current_data: true
+    historical_archive: true
+    requires_grib: false
+    optional: true
+    notes: >
+      Physically-plausible SYNTHETIC forecasts for offline demo/tests ONLY.
+      Never used unless explicitly selected (--synthetic). Clearly labeled in provenance.

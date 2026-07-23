@@ -360,7 +360,8 @@ def _try_intraday_cli_max(cfg, target_date, issue_utc) -> Optional[float]:
         from ..data.nws_climate_report import parse_climate_report
         from ..data.storage import http_client_from_config
         client = NwsApiClient(http_client_from_config(cfg))
-        text, _ = client.latest_central_park_cli()
+        cli_location = getattr(getattr(cfg, "market", None), "cli_location", None) or "NYC"
+        text, _ = client.latest_central_park_cli(location=cli_location)
         report = parse_climate_report(text, source="intraday_predict")
         if report.target_date != target_date:
             return None

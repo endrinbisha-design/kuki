@@ -120,3 +120,10 @@ regime_weighting:
   pop_clean_threshold: 25.0  # PoP% below => clean_warm (respect high-res HRRR/GFS warmth)
   nbm_cool_threshold_f: 2.0  # NBM cooler than high-res mean by this => suppression signature
   weights: {}                # empty => module defaults (storm 0.6/0.2/0.2, clean 0.2/0.4/0.4, neutral 0.5/0.25/0.25)
+
+# Station-specific external identifiers for live retrieval (defaults = KNYC/Central Park).
+market:
+  cli_location: "NYC"
+  cli_product_id_hint: "CLINYC"
+  kalshi_series: "KXHIGHNY"
+  iem_station: "NYC"

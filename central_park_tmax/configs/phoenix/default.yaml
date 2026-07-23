@@ -1,0 +1,122 @@
+# Phoenix Sky Harbor (KPHX) configuration — a second-city port of the KNYC MOS stack.
+# Mirrors configs/default.yaml; only station identity, paths, timezone-sensitive
+# vintages, folds, and regime thresholds are changed for the desert Southwest.
+
+station:
+  name: "PHOENIX SKY HARBOR INTL AP, AZ US"
+  shorthand: "KPHX"
+  noaa_station_id: "USW00023183"   # GHCN-Daily id (Sky Harbor)
+  wban: "23183"
+  icao: "KPHX"
+  latitude: 33.4278
+  longitude: -112.0037
+  elevation_m: 337.4                # Sky Harbor field elevation
+  timezone: "America/Phoenix"       # NO DST — UTC-7 year round (differs from NYC)
+
+paths:
+  data_dir: "data_phoenix"
+  raw_dir: "data_phoenix/raw"
+  observations_dir: "data_phoenix/raw/observations"
+  forecasts_dir: "data_phoenix/raw/forecasts"
+  nws_reports_dir: "data_phoenix/raw/nws_reports"
+  interim_dir: "data_phoenix/interim"
+  processed_dir: "data_phoenix/processed"
+  predictions_dir: "data_phoenix/predictions"
+  settlement_dir: "data_phoenix/settlement"
+  models_dir: "models_phoenix"
+  reports_dir: "reports_phoenix"
+  figures_dir: "reports_phoenix/figures"
+  metrics_dir: "reports_phoenix/metrics"
+
+# Vintages in LOCAL time (America/Phoenix). Same offsets as NYC; because AZ never
+# observes DST the UTC cycles shift by one hour vs NYC in summer, handled downstream.
+forecast_vintages:
+  - { name: "prev_evening_19", day: "prev_day", hour: 19, minute: 0 }
+  - { name: "target_06",       day: "target_day", hour: 6,  minute: 0 }
+  - { name: "target_12",       day: "target_day", hour: 12, minute: 0 }
+  - { name: "target_16",       day: "target_day", hour: 16, minute: 0 }
+  - { name: "target_20",       day: "target_day", hour: 20, minute: 0 }
+  - { name: "target_23",       day: "target_day", hour: 23, minute: 0 }
+
+trajectory_hours_local: [0, 3, 6, 9, 12, 15, 18, 21]
+
+active_forecast_sources:
+  - "nws_gridpoint"
+  - "nbm"
+  - "hrrr"
+  - "gfs"
+  - "gefs"
+
+baseline_source_preference: ["nbm", "hrrr", "gfs", "gefs", "nws_gridpoint"]
+
+archive:
+  start_date: "2019-01-01"
+  end_date: null
+
+models:
+  random_seed: 20240101
+  residual_target: true
+  boosting:
+    backend: "auto"
+    n_estimators: 600
+    learning_rate: 0.03
+    max_depth: 4
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_lambda: 1.0
+    min_child_weight: 5.0
+    early_stopping_rounds: 50
+  quantiles: [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]
+  hyperparameter_search:
+    enabled: true
+    max_candidates: 8
+
+uncertainty:
+  methods: ["quantile_gbm", "empirical_residual"]
+  n_simulation_draws: 20000
+
+validation:
+  scheme: "rolling_origin"
+  # Monthly rolling-origin folds within the Aug 2024 - Jan 2025 archive window
+  # (matches the NYC build window for an apples-to-apples comparison).
+  folds:
+    - { train_end: "2024-10-31", test_start: "2024-11-01", test_end: "2024-11-30" }
+    - { train_end: "2024-11-30", test_start: "2024-12-01", test_end: "2024-12-31" }
+    - { train_end: "2024-12-31", test_start: "2025-01-01", test_end: "2025-01-31" }
+  min_train_days: 60
+
+logging:
+  level: "INFO"
+  json: false
+
+http:
+  timeout_seconds: 30
+  max_retries: 4
+  backoff_seconds: 2.0
+  cache_enabled: true
+  user_agent: "central_park_tmax/0.1 (research; contact via NWS_API_USER_AGENT_EMAIL)"
+
+reporting_convention:
+  version: "nws_cli_v1"
+  method: "round_half_up"
+
+contract_rules:
+  version: "nhigh_v1"
+
+# Desert regime thresholds. Convective days are rare and monsoon-driven (Jul-Sep);
+# outside monsoon almost every day is clean_warm. Higher PoP bar for "storm" because
+# desert PoP is usually low even on active days.
+regime_weighting:
+  enabled: false
+  blend_strength: 0.5
+  pop_storm_threshold: 40.0   # lower than NYC (50): desert storms carry lower gridded PoP
+  pop_clean_threshold: 20.0
+  nbm_cool_threshold_f: 2.5
+  weights: {}
+
+# Station-specific external identifiers for live retrieval (CLI settlement, Kalshi, IEM).
+market:
+  cli_location: "PHX"        # NWS CLI location index for Phoenix (office is PSR)
+  cli_product_id_hint: "CLIPHX"
+  kalshi_series: "KXHIGHTPHX"
+  iem_station: "PHX"         # KPHX on the AZ_ASOS network
