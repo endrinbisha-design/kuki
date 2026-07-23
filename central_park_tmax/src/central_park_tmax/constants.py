@@ -91,8 +91,11 @@ class FallbackLevel(int, enum.Enum):
 # Units & conversions. Kept trivial and dependency-free for use everywhere.
 # --------------------------------------------------------------------------------------
 ABSOLUTE_ZERO_C = -273.15
-MIN_PLAUSIBLE_TMAX_F = -40.0   # QC bounds for NYC
-MAX_PLAUSIBLE_TMAX_F = 115.0
+# QC sanity bounds for a daily max (a parse/QC guard, not a per-station climatology).
+# Wide enough to admit desert-Southwest city highs (Phoenix routinely 116-118F) while
+# still catching absurd parse errors; Central Park never approaches either bound.
+MIN_PLAUSIBLE_TMAX_F = -40.0
+MAX_PLAUSIBLE_TMAX_F = 130.0
 
 
 def c_to_f(celsius: float) -> float:
