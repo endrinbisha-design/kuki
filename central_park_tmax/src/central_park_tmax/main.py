@@ -95,7 +95,8 @@ def cmd_build_dataset(cfg, args):
         from datetime import timedelta
         from .data.historical_obs import load_historical_obs
         obs_history = load_historical_obs(
-            http_client_from_config(cfg), start - timedelta(days=1), end + timedelta(days=1))
+            http_client_from_config(cfg), start - timedelta(days=1), end + timedelta(days=1),
+            iem_station=getattr(getattr(cfg, "market", None), "iem_station", None) or "NYC")
         log.info("Loaded %d historical obs rows for intraday features.", len(obs_history))
 
     df = build_dataset(cfg, source, start, end, synthetic=args.synthetic, normals=normals,
