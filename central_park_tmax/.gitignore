@@ -44,3 +44,6 @@ data_vegas/**
 models_vegas/**
 reports_vegas/figures/**
 reports_vegas/metrics/**
+
+# Bulk MOS text cache (re-fetchable in minutes from IEM; derived series ARE committed).
+backtest_datasets/mos_raw/**
