@@ -158,6 +158,10 @@ def predict_one(
                 log.info("Regime blend (%s): %.2fF -> %.2fF (strength %.2f)",
                          assess.regime, before, point, rw.blend_strength)
         ood_info.update(regime_info)
+        # Sea-breeze / marine-cap advisory (KNYC-style coastal stations only: requires a
+        # 'jfk' neighbor in locations). Best-effort; never blocks the forecast.
+        if not synthetic:
+            ood_info.update(_sea_breeze_advisory(cfg, target_date, point, issue_utc))
         residuals = model.oos_residuals
         attributions = _local_attributions(model, fm)
         model_name = f"{model.boosting.name}"
@@ -322,6 +326,53 @@ def _last_obs_local(obs: Optional[pd.DataFrame]) -> Optional[str]:
     if ts.empty:
         return None
     return isoformat_local(ts.max().to_pydatetime())
+
+
+def _sea_breeze_advisory(cfg, target_date, point_f, issue_utc) -> dict:
+    """Marine-cap advisory for coastal configs (needs a 'jfk' neighbor). Best-effort."""
+    locs = getattr(cfg, "locations", None)
+    if locs is None or not any(n.key == "jfk" for n in locs.neighbors):
+        return {}
+    out: dict = {}
+    try:
+        from ..data.storage import http_client_from_config
+        from ..features.sea_breeze import (coastal_divergence, night_before_risk,
+                                           parse_ndbc_realtime_sst_f)
+        http = http_client_from_config(cfg)
+        sst_f = None
+        try:
+            sst_f = parse_ndbc_realtime_sst_f(
+                http.get_text("https://www.ndbc.noaa.gov/data/realtime2/44065.txt",
+                              use_cache=False))
+        except Exception:  # noqa: BLE001
+            pass
+        risk = night_before_risk(forecast_cp_max_f=float(point_f), sst_f=sst_f,
+                                 day_of_year=target_date.timetuple().tm_yday)
+        out.update(risk.to_dict())
+        if sst_f is not None:
+            out["harbor_sst_f"] = round(sst_f, 1)
+        # Intraday: if predicting for 'today', check live coastal divergence.
+        if target_date == to_local(issue_utc).date():
+            obs = {}
+            for icao in ("KNYC", "KJFK", "KLGA"):
+                try:
+                    p = http.get_json(f"https://api.weather.gov/stations/{icao}/"
+                                      "observations/latest", use_cache=False)["properties"]
+                    t = (p.get("temperature") or {}).get("value")
+                    wd = (p.get("windDirection") or {}).get("value")
+                    obs[icao] = {"temp_f": (t * 9 / 5 + 32) if t is not None else None,
+                                 "wind_dir": wd}
+                except Exception:  # noqa: BLE001
+                    obs[icao] = {"temp_f": None, "wind_dir": None}
+            div = coastal_divergence(
+                cp_temp_f=obs["KNYC"]["temp_f"], jfk_temp_f=obs["KJFK"]["temp_f"],
+                lga_temp_f=obs["KLGA"]["temp_f"],
+                jfk_wind_dir_deg=obs["KJFK"]["wind_dir"],
+                cp_wind_dir_deg=obs["KNYC"]["wind_dir"])
+            out.update(div.to_dict())
+    except Exception as exc:  # noqa: BLE001
+        log.debug("sea-breeze advisory unavailable: %s", exc)
+    return out
 
 
 def _try_forecast_pop(cfg, target_date) -> Optional[float]:

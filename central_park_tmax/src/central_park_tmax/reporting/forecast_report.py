@@ -26,6 +26,13 @@ def render_forecast_text(record: Mapping) -> str:
         lines.append(f"  regime{adv:11}: {record['regime']} -> weighted "
                      f"{record.get('regime_weighted_tmax_f')} °F | {record.get('regime_rationale')}")
 
+    if record.get("sea_breeze_risk") is not None:
+        flag = " ** ELEVATED **" if record.get("sea_breeze_flagged") else ""
+        lines.append(f"  sea-breeze risk     : {record['sea_breeze_risk']*100:.0f}%{flag} "
+                     f"| {record.get('sea_breeze_rationale')}")
+    if record.get("sea_breeze_underway"):
+        lines.append(f"  MARINE INTRUSION UNDERWAY: {record.get('sea_breeze_divergence_rationale')}")
+
     pmf = record.get("integer_report_probabilities", {})
     if pmf:
         top = sorted(pmf.items(), key=lambda kv: kv[1], reverse=True)[:5]

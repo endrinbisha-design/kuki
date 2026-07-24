@@ -1,0 +1,104 @@
+{
+ "n_days": 1642,
+ "base_rate": 0.1218,
+ "folds": {
+  "2018": {
+   "n": 153,
+   "auc": 0.679,
+   "brier": 0.1638
+  },
+  "2019": {
+   "n": 152,
+   "auc": 0.608,
+   "brier": 0.1183
+  },
+  "2020": {
+   "n": 148,
+   "auc": 0.576,
+   "brier": 0.1275
+  },
+  "2021": {
+   "n": 153,
+   "auc": 0.636,
+   "brier": 0.0801
+  },
+  "2022": {
+   "n": 153,
+   "auc": 0.708,
+   "brier": 0.0882
+  },
+  "2023": {
+   "n": 153,
+   "auc": 0.59,
+   "brier": 0.1122
+  },
+  "2024": {
+   "n": 120,
+   "auc": 0.615,
+   "brier": 0.1205
+  },
+  "2025": {
+   "n": 151,
+   "auc": 0.622,
+   "brier": 0.104
+  }
+ },
+ "pooled_auc": 0.609,
+ "pooled_brier": 0.1141,
+ "top15pct": {
+  "threshold": 0.207,
+  "bust_rate_flagged": 0.202,
+  "bust_rate_unflagged": 0.117,
+  "mean_bust_f_flagged": -0.26,
+  "mean_bust_f_unflagged": 0.39
+ },
+ "warm_season_mae": {
+  "raw_mos": 2.05,
+  "with_flag_shift_demo": 2.05
+ },
+ "live_logistic": {
+  "features": [
+   "mos_cp",
+   "grad_fc",
+   "wdr_pm",
+   "wsp_pm",
+   "onshore_pm",
+   "contrast",
+   "doy_sin",
+   "doy_cos"
+  ],
+  "means": [
+   79.5189,
+   0.8161,
+   186.5012,
+   4.7409,
+   0.2942,
+   11.706,
+   -0.1703,
+   -0.7218
+  ],
+  "scales": [
+   8.4251,
+   1.9532,
+   89.0665,
+   2.5859,
+   0.4051,
+   7.1954,
+   0.6157,
+   0.2664
+  ],
+  "coef": [
+   0.2414,
+   0.6526,
+   0.2359,
+   0.2706,
+   -0.0716,
+   -0.8294,
+   0.0516,
+   -0.0498
+  ],
+  "intercept": -2.0679,
+  "flag_threshold": 0.207,
+  "flagged_mean_shift_f": -0.26
+ }
+}
