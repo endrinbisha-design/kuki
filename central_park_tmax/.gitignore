@@ -47,3 +47,7 @@ reports_vegas/metrics/**
 
 # Bulk MOS text cache (re-fetchable in minutes from IEM; derived series ARE committed).
 backtest_datasets/mos_raw/**
+
+# In-progress per-day checkpoint of the HRRR shape backtest; the final CSV is
+# committed explicitly by the analysis step when the fetch completes.
+backtest_datasets/hrrr_shape_backtest.csv
