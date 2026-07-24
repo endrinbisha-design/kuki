@@ -49,7 +49,11 @@ def run_fetch() -> None:
     days = pick_days()
     done = set()
     if OUT.exists():
-        done = set(pd.read_csv(OUT)["date"].astype(str))
+        prev = pd.read_csv(OUT)
+        # Only treat a day as done if it produced a usable trace; retry no-trace days
+        # (they are transient throttle/suspension failures — the data is available).
+        done = set(prev.loc[prev["hrrr_peak_hour_local"].notna(), "date"].astype(str))
+        prev[prev["hrrr_peak_hour_local"].notna()].to_csv(OUT, index=False)  # drop stale no-trace rows
     print(f"{len(days)} selected days ({int(days['label'].sum())} busts); {len(done)} already fetched",
           flush=True)
     for ts, row in days.iterrows():
