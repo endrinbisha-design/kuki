@@ -51,8 +51,13 @@ own observations still looked like clean warming at 10:30 AM.
 - Artifacts: `backtest_datasets/sea_breeze_classifier.json` (folds + distilled model),
   `backtest_datasets/nyc_seabreeze_frame.csv` (daily training frame).
 
-## Deferred (piece 4)
+## 3. HRRR hourly afternoon shape (piece 4 — built)
 
-HRRR hourly wind/temperature-shape extraction (does HRRR itself flatten the afternoon
-curve?) — the only GRIB-heavy piece; expected to sharpen timing, deferred until the
-archive machinery is chunked.
+`data/hrrr_hourly.py` pulls the hourly 2 m temp + 10 m wind trace at CP+JFK from the
+newest HRRR run and distills: `hrrr_peak_hour_local`, `hrrr_afternoon_range_f`,
+`hrrr_sees_cap`, `hrrr_onshore_hours`, `hrrr_cp_jfk_gap_pm_f`. Opt-in at predict time
+(env `CPT_HRRR_SHAPE=1`; ~1-2 min of GRIB byte-range downloads). First live run
+(target 2026-07-24) resolved a 3 PM sea-breeze frontal passage explicitly: CP peaking
+84 F at 14h, wind veering NE->SSE at 15h with a 2.6 F drop — exactly the timing signal
+the night-before classifier cannot provide. Archive backfill for training remains
+future work (chunked builds).

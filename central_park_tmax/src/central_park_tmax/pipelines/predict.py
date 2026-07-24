@@ -370,6 +370,12 @@ def _sea_breeze_advisory(cfg, target_date, point_f, issue_utc) -> dict:
                 jfk_wind_dir_deg=obs["KJFK"]["wind_dir"],
                 cp_wind_dir_deg=obs["KNYC"]["wind_dir"])
             out.update(div.to_dict())
+        # HRRR hourly afternoon-shape (piece 4): opt-in via CPT_HRRR_SHAPE=1 because it
+        # costs ~1-2 min of GRIB downloads per prediction.
+        import os
+        if os.environ.get("CPT_HRRR_SHAPE") == "1":
+            from ..data.hrrr_hourly import hrrr_shape_advisory
+            out.update(hrrr_shape_advisory(cfg, target_date, issue_utc))
     except Exception as exc:  # noqa: BLE001
         log.debug("sea-breeze advisory unavailable: %s", exc)
     return out
