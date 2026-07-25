@@ -158,6 +158,11 @@ def predict_one(
                 log.info("Regime blend (%s): %.2fF -> %.2fF (strength %.2f)",
                          assess.regime, before, point, rw.blend_strength)
         ood_info.update(regime_info)
+        # Hot-day tail calibration (advisory): city-specific measured error asymmetry at
+        # high forecast temperatures. See models/hot_day_calibration.py.
+        from ..models.hot_day_calibration import assess_hot_day
+        hot_adj = assess_hot_day(cfg.station.shorthand, point)
+        ood_info.update(hot_adj.to_dict())
         # Sea-breeze / marine-cap advisory (KNYC-style coastal stations only: requires a
         # 'jfk' neighbor in locations). Best-effort; never blocks the forecast.
         if not synthetic:

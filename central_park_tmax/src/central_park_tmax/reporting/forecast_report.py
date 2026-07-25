@@ -33,6 +33,9 @@ def render_forecast_text(record: Mapping) -> str:
     if record.get("sea_breeze_underway"):
         lines.append(f"  MARINE INTRUSION UNDERWAY: {record.get('sea_breeze_divergence_rationale')}")
 
+    if record.get("hot_day_calibration_applies"):
+        lines.append(f"  hot-day tail        : {record.get('hot_day_rationale')}")
+
     pmf = record.get("integer_report_probabilities", {})
     if pmf:
         top = sorted(pmf.items(), key=lambda kv: kv[1], reverse=True)[:5]
