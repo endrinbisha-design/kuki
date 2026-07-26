@@ -51,13 +51,40 @@ own observations still looked like clean warming at 10:30 AM.
 - Artifacts: `backtest_datasets/sea_breeze_classifier.json` (folds + distilled model),
   `backtest_datasets/nyc_seabreeze_frame.csv` (daily training frame).
 
-## 3. HRRR hourly afternoon shape (piece 4 — built)
+## 3. HRRR hourly afternoon shape (piece 4 — BUILT AND FALSIFIED)
 
-`data/hrrr_hourly.py` pulls the hourly 2 m temp + 10 m wind trace at CP+JFK from the
-newest HRRR run and distills: `hrrr_peak_hour_local`, `hrrr_afternoon_range_f`,
-`hrrr_sees_cap`, `hrrr_onshore_hours`, `hrrr_cp_jfk_gap_pm_f`. Opt-in at predict time
-(env `CPT_HRRR_SHAPE=1`; ~1-2 min of GRIB byte-range downloads). First live run
-(target 2026-07-24) resolved a 3 PM sea-breeze frontal passage explicitly: CP peaking
-84 F at 14h, wind veering NE->SSE at 15h with a 2.6 F drop — exactly the timing signal
-the night-before classifier cannot provide. Archive backfill for training remains
-future work (chunked builds).
+`data/hrrr_hourly.py` pulls the hourly 2 m temp + 10 m wind trace at CP+JFK and distills
+`hrrr_peak_hour_local`, `hrrr_afternoon_range_f`, `hrrr_sees_cap`, `hrrr_onshore_hours`,
+`hrrr_cp_jfk_gap_pm_f`. Opt-in at predict time (`CPT_HRRR_SHAPE=1`). It works
+mechanically — the 2026-07-24 live run resolved a 3 PM sea-breeze passage explicitly
+(CP peaking 84 F at 14h, wind veering NE→SSE at 15h with a 2.6 F drop).
+
+**But the case-control backtest falsified it as a bust predictor. Do not trade it.**
+
+144 days with usable traces (12Z runs; 2018-2025 bust days + month-matched controls):
+
+| signal | result |
+|---|---|
+| `hrrr_sees_cap` days (n=13) | bust rate **46%** |
+| no-cap days (n=131) | bust rate **50%** |
+| AUC `hrrr_onshore_hours` | **0.506** (coin flip) |
+| AUC `hrrr_cp_jfk_gap_pm_f` | **0.366** (inverted) |
+| AUC `hrrr_afternoon_range_f` | **0.438** (inverted) |
+
+All AUCs sit at or below 0.5, and the correlations that exist carry the *opposite* sign
+to the physical hypothesis (`peak_hour` r=−0.28; `cp_jfk_gap` r=+0.21). Nothing supports
+the intended use.
+
+Two honest reasons it failed:
+
+1. **Label mismatch.** The label is "MOS busted ≥2.5 F cool", not "a sea breeze
+   happened". When HRRR sees a cap, MOS usually saw it too — so a capped day is not a
+   MOS bust. On the 13 cap-flag days MOS error averaged only −0.93 F vs −2.04 F overall:
+   MOS was *more* accurate exactly when HRRR flagged a cap.
+2. **The flag selects the wrong days.** Cap-flag days averaged an actual max of 71.9 F
+   vs 77.9 F overall — `hrrr_sees_cap` fires on generally cool/cloudy days, not warm
+   sea-breeze days.
+
+A fairer future test would score HRRR's own point forecast against MOS on flagged days,
+rather than treating shape as a predictor of another model's error. Artifacts:
+`backtest_datasets/hrrr_shape_backtest.csv`, `scripts/hrrr_shape_backtest.py`.
