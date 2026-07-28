@@ -97,6 +97,22 @@ def predict_one(
     baseline = row.get("baseline_tmax_f")
     observed_max = row.get("observed_max_so_far_f")
 
+    # Low-latency settlement max (data/fast_metar.py): aviationweather.gov serves METARs
+    # ~1h ahead of api.weather.gov and carries the 6-hour maximum group, which captures
+    # peaks BETWEEN hourly snapshots — that group is what the CLI settlement derives from.
+    # Only ever RAISES the observed max (a banked max cannot decrease).
+    fast_info: dict = {}
+    if not synthetic and target_date == to_local(issue_utc).date():
+        fast_info = _fast_settlement_max(cfg, target_date, issue_utc)
+        fast_max = fast_info.get("settlement_max_f")
+        if fast_max is not None and (observed_max is None or fast_max > observed_max):
+            log.info("Fast METAR settlement max %.2fF supersedes observed %.2fF (source=%s)",
+                     fast_max, observed_max if observed_max is not None else float("nan"),
+                     fast_info.get("settlement_max_source"))
+            observed_max = fast_max
+            row["observed_max_so_far_f"] = fast_max
+            row["observed_max_so_far_source"] = fast_info.get("settlement_max_source")
+
     # --- point prediction & residual std via fallback hierarchy ---
     model = _nearest_vintage_model(bundle, vintage_name) if bundle else None
     attributions: list[dict] = []
@@ -158,6 +174,27 @@ def predict_one(
                 log.info("Regime blend (%s): %.2fF -> %.2fF (strength %.2f)",
                          assess.regime, before, point, rw.blend_strength)
         ood_info.update(regime_info)
+        # Daily strategy selector (advisory): which play is reliable for THIS regime.
+        try:
+            from ..models.daily_strategy import recommend_strategy
+            from ..models.post_peak import settlement_distribution
+            lh = to_local(issue_utc).hour
+            det = None
+            if observed_max is not None:
+                det = settlement_distribution(cfg.station.shorthand, float(observed_max),
+                                              lh).determined
+            spread = None
+            if secondary_tmax_f and baseline is not None:
+                vals = [float(baseline)] + [v for v in secondary_tmax_f.values() if v is not None]
+                spread = max(vals) - min(vals) if len(vals) > 1 else None
+            adv = recommend_strategy(
+                station_shorthand=cfg.station.shorthand, local_hour=lh,
+                pop_pct=row.get("pop_day_max_pct"),
+                observed_max_f=observed_max, forecast_tmax_f=baseline,
+                determined=det, model_spread_f=spread)
+            ood_info.update(adv.to_dict())
+        except Exception as exc:  # noqa: BLE001
+            log.debug("strategy advice unavailable: %s", exc)
         # Hot-day tail calibration (advisory): city-specific measured error asymmetry at
         # high forecast temperatures. See models/hot_day_calibration.py.
         from ..models.hot_day_calibration import assess_hot_day
@@ -256,6 +293,7 @@ def predict_one(
         "last_observation_at_local": _last_obs_local(obs),
         "observed_max_so_far_f": None if observed_max is None or (isinstance(observed_max, float) and np.isnan(observed_max)) else round(float(observed_max), 1),
         "observed_max_so_far_source": row.get("observed_max_so_far_source"),
+        **{k: v for k, v in fast_info.items() if k != "settlement_max_f"},
         # Human-facing nowcasting diagnostics (NOT model inputs; see features_frame
         # DIAGNOSTIC_ONLY_COLUMNS). On a stalled-temperature day these flag that the live
         # trajectory is running below the forecast, even though the model does not weight them.
@@ -408,6 +446,23 @@ def _try_forecast_pop(cfg, target_date) -> Optional[float]:
     except Exception as exc:  # noqa: BLE001
         log.debug("No forecast PoP for %s: %s", target_date, exc)
         return None
+
+
+def _fast_settlement_max(cfg, target_date, issue_utc) -> dict:
+    """Settlement max so far from the low-latency METAR feed. {} on any failure."""
+    try:
+        from ..data.fast_metar import fetch_fast_metars, settlement_max_so_far
+        from ..data.storage import http_client_from_config
+        icao = cfg.station.icao
+        obs = fetch_fast_metars(http_client_from_config(cfg), icao, hours=12,
+                                reference_utc=issue_utc)
+        if not obs:
+            return {}
+        offset = int(round((to_local(issue_utc).utcoffset().total_seconds()) / 3600))
+        return settlement_max_so_far(obs, target_date, utc_offset_hours=offset).to_dict()
+    except Exception as exc:  # noqa: BLE001
+        log.debug("fast settlement max unavailable: %s", exc)
+        return {}
 
 
 def _try_intraday_cli_max(cfg, target_date, issue_utc) -> Optional[float]:

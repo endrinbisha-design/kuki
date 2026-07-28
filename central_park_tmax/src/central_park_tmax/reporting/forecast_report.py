@@ -36,6 +36,14 @@ def render_forecast_text(record: Mapping) -> str:
     if record.get("hot_day_calibration_applies"):
         lines.append(f"  hot-day tail        : {record.get('hot_day_rationale')}")
 
+    if record.get("strategy"):
+        lines.append(f"  STRATEGY            : {record['strategy']} "
+                     f"[{record.get('strategy_confidence')}] "
+                     f"regime={record.get('strategy_regime')} lean={record.get('strategy_lean')}")
+        lines.append(f"      why: {record.get('strategy_rationale')}")
+        for a in (record.get("strategy_actions") or [])[:3]:
+            lines.append(f"      - {a}")
+
     pmf = record.get("integer_report_probabilities", {})
     if pmf:
         top = sorted(pmf.items(), key=lambda kv: kv[1], reverse=True)[:5]
