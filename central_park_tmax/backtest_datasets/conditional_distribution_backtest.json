@@ -1,0 +1,29 @@
+{
+ "nyc": {
+  "n": 2554,
+  "logloss_gaussian_baseline": 2.52,
+  "logloss_conditional": 3.331,
+  "top2_gaussian": 0.2925,
+  "top2_conditional": 0.2709,
+  "logloss_emos": 2.4799,
+  "top2_emos": 0.3058
+ },
+ "phoenix": {
+  "n": 2554,
+  "logloss_gaussian_baseline": 2.0594,
+  "logloss_conditional": 2.8464,
+  "top2_gaussian": 0.4965,
+  "top2_conditional": 0.4397,
+  "logloss_emos": 2.0573,
+  "top2_emos": 0.4561
+ },
+ "vegas": {
+  "n": 2554,
+  "logloss_gaussian_baseline": 2.1926,
+  "logloss_conditional": 3.188,
+  "top2_gaussian": 0.4307,
+  "top2_conditional": 0.3912,
+  "logloss_emos": 2.2834,
+  "top2_emos": 0.4088
+ }
+}
