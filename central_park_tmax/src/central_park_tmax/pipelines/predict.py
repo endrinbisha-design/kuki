@@ -182,7 +182,7 @@ def predict_one(
             det = None
             if observed_max is not None:
                 # Pass the live trace: without it the remaining-rise climatology will
-                # happily call a still-climbing day "determined" (2025-07-29, all three
+                # happily call a still-climbing day "determined" (2026-07-29, all three
                 # cities at once). See models/post_peak.py.
                 outlook = settlement_distribution(
                     cfg.station.shorthand, float(observed_max), lh,

@@ -21,14 +21,14 @@ e.g. NYC 16h local: P(rise = 0) = 95%, P(rise <= 1) = 98%; Phoenix 17h: P(rise =
 Settlement convention: the NWS CLI reports whole degrees F, round-half-up (see
 models/reporting_convention.py), so 116.60 F settles as 117 — a rounding boundary is a
 real risk that this module prices explicitly. The corollary, learned the expensive way
-(track_record 2025-07-25 Phoenix, 2025-07-30 Vegas): **the distance that matters is the
+(track_record 2026-07-25 Phoenix, 2026-07-30 Vegas): **the distance that matters is the
 distance to the nearest .5 boundary, never to the next whole degree.** A bucket labelled
 "112-113" wins at a true max of 111.5 F, not 112.0 F.
 
-Conditioning caveat (fixed 2025-07-29): the remaining-rise CDF is UNCONDITIONAL
+Conditioning caveat (fixed 2026-07-29): the remaining-rise CDF is UNCONDITIONAL
 climatology for an hour of day. It answers "across all days, how much more did the
 temperature rise after this hour?" — which is the wrong question on a day that is still
-rising right now. On 2025-07-29 the raw flag read ``determined=True`` simultaneously in
+rising right now. On 2026-07-29 the raw flag read ``determined=True`` simultaneously in
 all three cities while every one of them was still climbing. ``settlement_distribution``
 therefore accepts the recent observation trace and refuses to declare the max determined
 while the temperature is flat-or-rising.

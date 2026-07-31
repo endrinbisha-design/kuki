@@ -20,7 +20,7 @@ Three findings drive the rules below:
 
 1. **Wet days are much harder everywhere** — MAE rises 35% (NYC), 88% (Phoenix),
    73% (Vegas). Both tails fatten. Narrow bucket bets should simply be avoided — but
-   "avoid" applies to the *instrument*, not the day. Live on 2025-07-30 this selector
+   "avoid" applies to the *instrument*, not the day. Live on 2026-07-30 this selector
    said WET_DAY_AVOID for NYC and the correct trade was still available: a WIDE one-sided
    range (<=77F) fading the whole warm side, which cashed. A fat cool tail is untradeable
    as a 2-degree bucket and very tradeable as a half-line.

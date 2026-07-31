@@ -15,9 +15,9 @@ The measured statistics behind these rules are in `MOS_MULTIYEAR_BACKTEST.md`,
 The NWS CLI reports whole degrees. A contract labelled **112–113 wins at a true max of
 111.5 °F**, not 112.0 °F.
 
-* **2025-07-25 Phoenix.** A NO position at 117–118 lost because 116.60 °F settled as
+* **2026-07-25 Phoenix.** A NO position at 117–118 lost because 116.60 °F settled as
   **117**. The bet looked ~1.4 °F safe; it was 0.1 °F safe.
-* **2025-07-30 Vegas.** The banked max was 111.02 °F and the position needed 111.5, not
+* **2026-07-30 Vegas.** The banked max was 111.02 °F and the position needed 111.5, not
   112 — a 0.48 °F gap, which in sensor units is 43.9 °C needing 44.2 °C. Three tenths, not
   a full degree. Same mechanism, opposite side of the trade.
 
@@ -36,7 +36,7 @@ The remaining-rise table answers *"across all days, how much more did it rise af
 hour?"* — an **unconditional** question. On a day that is still climbing at 4 PM, that is
 the wrong reference class.
 
-* **2025-07-29.** The raw flag read `determined=True` in NYC, Phoenix and Vegas
+* **2026-07-29.** The raw flag read `determined=True` in NYC, Phoenix and Vegas
   *simultaneously* while all three were still rising. That simultaneity is the tell: a
   genuine post-peak lock is a local weather fact, not a synchronized national event.
 
@@ -52,7 +52,7 @@ passed through by `pipelines/predict.py`.
 
 ## 3. Do not override the post-peak tool with a narrative
 
-* **2025-07-26 NYC.** `determined` was False (89 % vs the 90 % threshold). I overrode it
+* **2026-07-26 NYC.** `determined` was False (89 % vs the 90 % threshold). I overrode it
   because the trace showed "peak, then decline — the max is banked." The temperature
   re-warmed to 84.02 °F and **both recommended legs lost.**
 
@@ -60,13 +60,13 @@ passed through by `pipelines/predict.py`.
 day is over is exactly the input that has no measured skill.
 
 *In code:* the threshold is the only gate; nothing in the pipeline can talk it up.
-*In the record:* `track_record/call_log.jsonl`, 2025-07-26.
+*In the record:* `track_record/call_log.jsonl`, 2026-07-26.
 
 ---
 
 ## 4. "Avoid" applies to the instrument, not to the day
 
-* **2025-07-30 NYC.** The selector said WET_DAY_AVOID and I said no trade. The user traded
+* **2026-07-30 NYC.** The selector said WET_DAY_AVOID and I said no trade. The user traded
   **≤77 °F** — a wide one-sided range, not a bucket — and cashed **+$50.**
 
 Wet days have MAE ~2× dry days and fat tails *both* ways. That destroys a 2-degree bucket
@@ -97,7 +97,7 @@ multi-year series. Anecdotes open a research ticket, never a position.
 
 ## 6. The observation feed we trade on must be the one settlement derives from
 
-Two independent defects were found on 2025-07-28 after the market repeatedly out-priced
+Two independent defects were found on 2026-07-28 after the market repeatedly out-priced
 our data:
 
 1. `api.weather.gov` lagged the real feed by **~1 hour**. Trading off it means acting on
@@ -151,7 +151,7 @@ temperature is not the same as being right about the bucket.
 
 ## 9. Open — not yet resolved
 
-* **2025-07-29 NYC, 79 vs 80.** Our computed max was 78.98 °F (→ 79) from two agreeing
+* **2026-07-29 NYC, 79 vs 80.** Our computed max was 78.98 °F (→ 79) from two agreeing
   sources; the market held 80–81 at 99/100¢ on 73k volume and settled against us.
   One-minute ASOS is not published for KNYC, so the discrepancy could not be reconciled.
   Treat a high-volume market disagreement at ≥95¢ as evidence we are missing data, not as

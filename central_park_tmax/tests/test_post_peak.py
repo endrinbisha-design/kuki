@@ -61,7 +61,7 @@ def test_unknown_station_degrades_gracefully():
 
 
 def test_still_rising_blocks_determined():
-    """2025-07-29: hourly climatology called all three cities determined while every one
+    """2026-07-29: hourly climatology called all three cities determined while every one
     of them was still climbing. The live trace has to veto the unconditional table."""
     rising = settlement_distribution("KNYC", 80.1, 16, recent_temps_f=[77.0, 79.0, 80.1])
     assert rising.still_rising and not rising.determined
@@ -83,7 +83,7 @@ def test_noise_sized_dip_is_not_a_peak():
 
 
 def test_distance_is_to_the_half_degree_boundary():
-    """2025-07-30 Vegas: 111.02F was 0.48F from settling 112, not 0.98F."""
+    """2026-07-30 Vegas: 111.02F was 0.48F from settling 112, not 0.98F."""
     o = settlement_distribution("KLAS", 111.02, 17, recent_temps_f=FALLING)
     assert o.distance_to_boundary_f == 0.48
     assert o.top_bucket == 111

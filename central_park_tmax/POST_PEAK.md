@@ -70,7 +70,7 @@ the 116.6 → 117 rounding trap that decided the Phoenix market.
 
 **1. `determined` is now conditioned on the live trace.** The remaining-rise table is
 *unconditional* climatology for an hour of day, so it cannot tell a banked max from one
-that is still climbing. On 2025-07-29 it read `determined=True` in NYC, Phoenix and Vegas
+that is still climbing. On 2026-07-29 it read `determined=True` in NYC, Phoenix and Vegas
 at the same moment while all three were still rising. `settlement_distribution()` now
 takes `recent_temps_f` (chronological, from the fast-METAR feed) and forces
 `determined=False` whenever the last two observations are flat-or-rising within sensor
@@ -78,12 +78,12 @@ noise (0.2 °F). No trace supplied ⇒ treated as still rising.
 
 **2. The margin is measured to the .5 boundary, not the whole degree.** Every outlook
 carries `distance_to_boundary_f`: how far the current max is from the next round-half-up
-settlement boundary. A "112–113" contract flips at **111.5 °F**. On 2025-07-30 Vegas the
+settlement boundary. A "112–113" contract flips at **111.5 °F**. On 2026-07-30 Vegas the
 banked 111.02 °F was 0.48 °F from settling one degree higher — half the margin a
 whole-degree reading implied. The same mechanism turned a 116.60 °F Phoenix max into a
-**117** settlement on 2025-07-25.
+**117** settlement on 2026-07-25.
 
-Related rule, learned on 2025-07-26: **do not talk the threshold up.** 89 % is not 90 %.
+Related rule, learned on 2026-07-26: **do not talk the threshold up.** 89 % is not 90 %.
 Overriding `determined=False` on a "peak then decline, it's banked" narrative lost both
 legs when the temperature re-warmed.
 
