@@ -10,6 +10,15 @@ and **exact NHIGH temperature-contract probabilities**.
 > modeled explicitly here. Probabilities are forecasts, not guarantees. The project does not
 > execute trades.
 
+**Start here if you are picking this project back up:** [`LESSONS.md`](LESSONS.md) — the
+consolidated operating rules learned from live trading, each pointing at the module that
+enforces it. Supporting analyses: [`POST_PEAK.md`](POST_PEAK.md),
+[`DAILY_STRATEGY.md`](DAILY_STRATEGY.md), [`EDGE_DECAY.md`](EDGE_DECAY.md),
+[`HOT_DAY_CALIBRATION.md`](HOT_DAY_CALIBRATION.md),
+[`MOS_MULTIYEAR_BACKTEST.md`](MOS_MULTIYEAR_BACKTEST.md),
+[`MULTI_CITY_COMPARISON.md`](MULTI_CITY_COMPARISON.md), [`SEA_BREEZE.md`](SEA_BREEZE.md),
+[`PHOENIX_PORT.md`](PHOENIX_PORT.md).
+
 ---
 
 ## 1. Scientific motivation

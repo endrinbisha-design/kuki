@@ -19,7 +19,11 @@ scripts/regime_stats_fit.py). ``err = actual - forecast``; positive = guidance r
 Three findings drive the rules below:
 
 1. **Wet days are much harder everywhere** — MAE rises 35% (NYC), 88% (Phoenix),
-   73% (Vegas). Both tails fatten. Narrow bucket bets should simply be avoided.
+   73% (Vegas). Both tails fatten. Narrow bucket bets should simply be avoided — but
+   "avoid" applies to the *instrument*, not the day. Live on 2025-07-30 this selector
+   said WET_DAY_AVOID for NYC and the correct trade was still available: a WIDE one-sided
+   range (<=77F) fading the whole warm side, which cashed. A fat cool tail is untradeable
+   as a 2-degree bucket and very tradeable as a half-line.
 2. **Phoenix's bias FLIPS SIGN with moisture.** Dry: guidance runs cool (+0.75, cool
    tail only 6%) so the warm bucket carries weight. Wet: guidance runs slightly warm
    (-0.37) and the cool tail explodes 6% -> 31%. A rule learned on dry desert days is
@@ -105,7 +109,8 @@ def recommend_strategy(*, station_shorthand: Optional[str],
             f"max already banked ({observed_max_f:.1f}F at {local_hour}h local) — the "
             "outcome is arithmetic plus rounding, not a forecast",
             ["buy the banked bucket if it prices below its settlement probability",
-             "check the rounding-boundary warning before sizing",
+             "measure the margin to the nearest .5 SETTLEMENT boundary, not to the next "
+             "whole degree — a 112-113 bucket flips at 111.5F",
              "expect a grind: these price 85-95c, so risk/reward is ~9:1"])
 
     # 2) Convective day — measured to be roughly twice as hard.
@@ -116,7 +121,10 @@ def recommend_strategy(*, station_shorthand: Optional[str],
             f"convective regime (PoP {pop_pct:.0f}%): measured MAE {st['mae']:.2f}F vs "
             f"{REGIME_STATS[city]['dry']['mae']:.2f}F on dry days, with fat tails both "
             f"ways (P>=+2F {st['p_warm2']:.0%}, P<=-2F {st['p_cool2']:.0%})",
-            ["avoid narrow bucket bets entirely — this is the worst regime for them",
+            ["avoid NARROW bucket bets entirely — this is the worst regime for them",
+             "DO express the fat cool tail as a WIDE one-sided range (<= a strike well "
+             f"below the model centre): P(<=-2F) is {st['p_cool2']:.0%} here and the "
+             "market prices the point forecast, not the tail",
              "fade any bucket the market prices above ~85%: overconfidence is the edge",
              "if trading at all, wait for the post-peak lock"])
 

@@ -181,8 +181,14 @@ def predict_one(
             lh = to_local(issue_utc).hour
             det = None
             if observed_max is not None:
-                det = settlement_distribution(cfg.station.shorthand, float(observed_max),
-                                              lh).determined
+                # Pass the live trace: without it the remaining-rise climatology will
+                # happily call a still-climbing day "determined" (2025-07-29, all three
+                # cities at once). See models/post_peak.py.
+                outlook = settlement_distribution(
+                    cfg.station.shorthand, float(observed_max), lh,
+                    recent_temps_f=fast_info.get("recent_temps_f"))
+                det = outlook.determined
+                ood_info.update(outlook.to_dict())
             spread = None
             if secondary_tmax_f and baseline is not None:
                 vals = [float(baseline)] + [v for v in secondary_tmax_f.values() if v is not None]

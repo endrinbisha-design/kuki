@@ -33,7 +33,7 @@ give extra sampling during rapidly changing conditions.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from typing import Optional
 
@@ -124,6 +124,10 @@ class SettlementMax:
     six_hour_max_f: Optional[float]
     latest_issued_utc: Optional[datetime]
     gap_f: float = 0.0        # how much the 6-hour group exceeds the hourly snapshots
+    # Instantaneous temperatures for the local day in CHRONOLOGICAL order. Consumers use
+    # the tail of this to tell "the max is banked" from "still climbing" — the hourly
+    # remaining-rise climatology cannot distinguish the two on its own.
+    recent_temps_f: list[float] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {"settlement_max_f": self.best_max_f,
@@ -131,6 +135,7 @@ class SettlementMax:
                 "hourly_snapshot_max_f": self.hourly_max_f,
                 "metar_6h_max_f": self.six_hour_max_f,
                 "snapshot_gap_f": round(self.gap_f, 2),
+                "recent_temps_f": self.recent_temps_f[-6:],
                 "latest_ob_utc": self.latest_issued_utc.isoformat()
                 if self.latest_issued_utc else None}
 
@@ -153,7 +158,11 @@ def settlement_max_so_far(obs: list[FastObservation], target_date: date,
     six = [o.six_hour_max_f for o in todays if o.six_hour_max_f is not None]
     h_max = max(hourly) if hourly else None
     s_max = max(six) if six else None
+    # ``obs`` (and therefore ``todays``) is newest-first; the trace wants chronological.
+    trace = [o.temp_f for o in reversed(todays) if o.temp_f is not None]
     if s_max is not None and (h_max is None or s_max > h_max):
         return SettlementMax(s_max, "metar_6h_group", h_max, s_max,
-                             todays[0].issued_utc, (s_max - h_max) if h_max else 0.0)
-    return SettlementMax(h_max, "hourly_snapshot", h_max, s_max, todays[0].issued_utc, 0.0)
+                             todays[0].issued_utc, (s_max - h_max) if h_max else 0.0,
+                             recent_temps_f=trace)
+    return SettlementMax(h_max, "hourly_snapshot", h_max, s_max, todays[0].issued_utc, 0.0,
+                         recent_temps_f=trace)
