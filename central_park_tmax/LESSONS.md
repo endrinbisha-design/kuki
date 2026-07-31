@@ -264,11 +264,15 @@ miscalibration.
 
 ---
 
-## 12. Open — not yet resolved
+**Recalibration outcome (done):** an isotonic correction with day-blocked folds fixes the
+calibration (the 6 %-vs-20 % gap closes; Brier 0.19→0.18, 0.22→0.21) — **and the edge
+vanishes with it**: +8.3 % → +1.2 %, and −2.6 % at the tightest filter. That confirms the
+profit was miscalibration residue, not alpha. The market still beats our corrected model on
+Brier (0.12–0.15 vs 0.18–0.21) in every city. **Do not trade `model_p − price` here.**
 
-* **Recalibrating the integer PMF** (isotonic/Platt per city) against the realised
-  frequencies in `backtest_datasets/real_price_backtest_trades.csv` — the clear next step,
-  not yet done.
+---
+
+## 12. Open — not yet resolved
 * **The wide one-sided ranges** that actually worked live (lesson #4) are excluded from the
   real-price backtest, which covers `between` markets only. That instrument is untested at
   real prices.

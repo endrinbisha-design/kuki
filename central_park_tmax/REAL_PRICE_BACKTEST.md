@@ -86,3 +86,55 @@ This is the mechanism that manufactures the apparent edge. "Edge" is defined as
   (`LESSONS.md` #4) are excluded — that instrument deserves its own study.
 * Mid prices, not executable fills; real slippage would reduce every number above.
 * Candles are hourly, so intra-hour timing is approximated.
+
+---
+
+# Recalibration result: the edge was miscalibration residue
+
+`scripts/recalibrate_pmf.py` fits an **isotonic** correction (monotone, non-parametric)
+from raw model probability to realised frequency, per city, with **day-blocked K-fold** —
+folds split by date, never by row, so the calibrator never sees the day it is scored on.
+
+## The correction works
+
+| city | Brier raw | Brier calibrated | **Brier market** | LL raw | LL calibrated | **LL market** |
+|---|---|---|---|---|---|---|
+| KXHIGHNY | 0.194 | 0.182 | **0.147** | 0.614 | 0.558 | **0.444** |
+| KXHIGHTLV | 0.197 | 0.182 | **0.122** | 0.593 | 0.546 | **0.385** |
+| KXHIGHTPHX | 0.223 | 0.209 | **0.136** | 0.715 | 0.602 | **0.419** |
+
+The calibrated probabilities now track reality closely:
+
+| raw p | calibrated p | actual | market |
+|---|---|---|---|
+| 0.062 | 0.193 | 0.202 | 0.228 |
+| 0.297 | 0.439 | 0.457 | 0.437 |
+| 0.488 | 0.490 | 0.450 | 0.455 |
+| 0.701 | 0.688 | 0.693 | 0.631 |
+| 0.930 | 0.878 | 0.856 | 0.835 |
+
+The 6 %-vs-20 % gap is gone. Calibration was a real, fixable defect and it is fixed.
+
+## And the edge disappears with it
+
+| filter | raw ROI | **calibrated ROI** | calibrated CI | P(ROI ≤ 0) |
+|---|---|---|---|---|
+| edge ≥ 5 % | +8.28 % | **+1.21 %** | −11.3 % … +14.4 % | 0.43 |
+| edge ≥ 10 % | +6.79 % | **+3.10 %** | −14.2 % … +20.9 % | 0.37 |
+| edge ≥ 15 % | +5.94 % | **−2.58 %** | −23.3 % … +19.4 % | 0.60 |
+
+This is the decisive test and it came back negative. The hypothesis in the section above —
+that the apparent profit was the residue of overconfident probabilities rather than alpha —
+is confirmed: **make the probabilities honest and the profit goes away.**
+
+## The bottom line
+
+**The market is still materially better than we are, even after calibration.** Its Brier
+score (0.12–0.15) beats our corrected model (0.18–0.21) in every city, and its log loss
+beats ours by a wide margin. We are not close.
+
+Do not trade `model_p − price` on these markets. The defensible use of this system is the
+part that is measurably strong — settlement **mechanics** (204/204 in
+`kalshi_settlement_validation.py`): knowing precisely what the banked observations imply
+once the max is genuinely in, from a continuous source. That is arithmetic, not
+forecasting, and it is a much narrower claim than "we can price these contracts."
