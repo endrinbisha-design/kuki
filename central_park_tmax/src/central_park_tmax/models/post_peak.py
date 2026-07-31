@@ -41,10 +41,17 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
-_DATA = Path(__file__).resolve().parents[3] / "backtest_datasets" / "remaining_rise.json"
+_BACKTESTS = Path(__file__).resolve().parents[3] / "backtest_datasets"
+_DATA = _BACKTESTS / "remaining_rise.json"
+_GAP_DATA = _BACKTESTS / "snapshot_gap.json"
 
 # Station shorthand -> remaining-rise city key.
 _STATION_KEYS = {"KNYC": "nyc", "KPHX": "phoenix", "KLAS": "vegas"}
+# City key -> IEM station id used by the snapshot-gap study.
+_GAP_KEYS = {"nyc": "NYC", "phoenix": "PHX", "vegas": "LAS"}
+
+# Observed-max provenance that already reflects the CONTINUOUS trace (no snapshot gap).
+CONTINUOUS_SOURCES = {"metar_6h_group", "cli", "intraday_cli", "twentyfour_hour_group"}
 
 
 @lru_cache(maxsize=1)
@@ -52,6 +59,25 @@ def _rise_table() -> dict:
     if not _DATA.exists():
         return {}
     return json.loads(_DATA.read_text())
+
+
+@lru_cache(maxsize=1)
+def _gap_table() -> dict:
+    if not _GAP_DATA.exists():
+        return {}
+    return json.loads(_GAP_DATA.read_text())
+
+
+def snapshot_gap_percentiles(city: Optional[str]) -> Optional[list[float]]:
+    """Measured afternoon under-read of hourly snapshots vs the continuous trace.
+
+    101 equally-weighted percentiles in F (scripts/snapshot_gap_study.py). Median is
+    ~1.0 F in all three cities: an hourly-snapshot max taken during the trading window is
+    typically a FULL DEGREE below what the CLI will settle on.
+    """
+    entry = _gap_table().get(_GAP_KEYS.get(city or "", ""), {})
+    p = entry.get("afternoon_gap_percentiles_f")
+    return list(p) if p else None
 
 
 def resolve_city_key(station_shorthand: Optional[str]) -> Optional[str]:
@@ -121,6 +147,7 @@ def settlement_distribution(station_shorthand: Optional[str],
                             local_hour: int,
                             determined_threshold: float = 0.90,
                             recent_temps_f: Optional[Sequence[float]] = None,
+                            observed_max_source: Optional[str] = None,
                             ) -> SettlementOutlook:
     """Distribution over the settled integer max, from live observations alone.
 
@@ -132,6 +159,11 @@ def settlement_distribution(station_shorthand: Optional[str],
     hourly climatology says — see the conditioning caveat in the module docstring. Passing
     nothing is treated as "still rising", i.e. never determined; callers that genuinely
     have no trace should not be claiming a locked max.
+
+    ``observed_max_source`` names the provenance of ``observed_max_f``. Anything not in
+    ``CONTINUOUS_SOURCES`` is assumed to be an hourly-snapshot reading and gets the
+    measured snapshot-gap distribution convolved in — without this the tool treats a
+    snapshot max as exact and reads roughly a full degree low.
     """
     city = resolve_city_key(station_shorthand)
     cdf = remaining_rise_cdf(city, local_hour) if city else None
@@ -147,13 +179,23 @@ def settlement_distribution(station_shorthand: Optional[str],
                                  rationale="degenerate remaining-rise distribution")
     pmf_rise = [p / total for p in pmf_rise]
 
-    # Final max = observed max + rise; settle by round-half-up on whole degrees F.
+    # The observed max may itself UNDER-READ the settlement value: hourly :51 snapshots
+    # miss spikes between observations, and the 6-hour group covering the afternoon is not
+    # transmitted until 23:51Z. Convolve in the measured gap unless the observed max
+    # already comes from a continuous source. See snapshot_gap_study.py / LESSONS.md #10.
+    gap_pcts = (snapshot_gap_percentiles(city)
+                if (observed_max_source or "").lower() not in CONTINUOUS_SOURCES else None)
+    gaps: list[float] = list(gap_pcts) if gap_pcts else [0.0]
+    gap_weight = 1.0 / len(gaps)
+
+    # Final max = observed max + snapshot gap + further rise; settle by round-half-up.
     out: dict[int, float] = {}
     for rise, p in enumerate(pmf_rise):
         if p <= 0:
             continue
-        settled = int((observed_max_f + rise) + 0.5)   # round-half-up
-        out[settled] = out.get(settled, 0.0) + p
+        for g in gaps:
+            settled = int((observed_max_f + max(g, 0.0) + rise) + 0.5)   # round-half-up
+            out[settled] = out.get(settled, 0.0) + p * gap_weight
 
     top = max(out, key=lambda k: out[k])
     p_zero = pmf_rise[0]

@@ -87,6 +87,45 @@ Related rule, learned on 2026-07-26: **do not talk the threshold up.** 89 % is n
 Overriding `determined=False` on a "peak then decline, it's banked" narrative lost both
 legs when the temperature re-warmed.
 
+## Third correction: the observed max is itself biased low while you trade
+
+Resolved 2026-07-31, and it is the largest of the three. The tool treated the observed max
+as **exact**. It is not, during exactly the hours the edge exists:
+
+* The METAR 6-hour maximum group — the continuous trace the CLI settles on — is
+  transmitted only in the 05:51 / 11:51 / 17:51 / 23:51 Z reports. The group covering the
+  afternoon (18Z–00Z) does not exist until **23:51 Z = 7:51 PM EDT**, long after the
+  15–17 h trading window (see `EDGE_DECAY.md`).
+* Inside the window, the afternoon is covered only by `:51` hourly snapshots, which miss
+  spikes between observations.
+
+Measured over 2021–2025 warm seasons (`scripts/snapshot_gap_study.py`), comparing each
+afternoon 6-hour group against the snapshots taken inside that same period:
+
+| station | median gap | P(gap ≥ 0.5 °F) | P(gap ≥ 1.0 °F) | n |
+|---|---|---|---|---|
+| KNYC | **0.98 °F** | 69 % | 50 % | 762 |
+| KPHX | **1.02 °F** | 79 % | 58 % | 760 |
+| KLAS | **0.98 °F** | 70 % | 45 % | 754 |
+
+A snapshot max taken while trading is typically a **full degree low**. That is the whole
+of the 2026-07-29 NYC mystery: our 78.98 °F read 79, the market held 80–81 at 99 ¢ on 73 k
+volume, and the CLI settled **80**. The market was not mispriced; we were behind.
+
+`settlement_distribution()` now takes `observed_max_source` and convolves the measured gap
+distribution into the PMF unless the max came from a continuous source
+(`CONTINUOUS_SOURCES`). On the Jul 29 inputs the corrected tool returns **80 at 42 %,
+79 at 30 %** and refuses `determined` — it would have stopped the call. An unrecognised
+source is treated as a snapshot, since defaulting to "exact" is what caused the error.
+
+**The better fix is to stop reconstructing at all.** The NWS issues a *preliminary* CLI at
+**~20:35 Z ≈ 4:35 PM EDT** — the settlement product itself, inside the trading window. The
+2026-07-29 20:32 Z product already read `MAXIMUM 80 at 227 PM`. `_try_intraday_cli_max()`
+in `pipelines/predict.py` picks this up automatically once it exists; the failure was
+operational (we looked earlier and trusted METAR), not a missing code path. Caveat: it is
+a max-so-far, not a final — on Jul 30 the 4:36 PM preliminary said 73 and the day finished
+**74** at 5:53 PM.
+
 ## Honest limits
 
 - Climatology is 2021–2025 warm seasons only (May–Sep). Winter and shoulder seasons are

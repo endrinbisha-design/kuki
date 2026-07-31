@@ -5,6 +5,8 @@ from central_park_tmax.models.post_peak import (bucket_probability, edge_vs_pric
 
 # A trace that has clearly turned over: required before any max counts as banked.
 FALLING = [79.0, 80.1, 79.3, 78.4]
+# Provenance meaning "this max IS the continuous trace" — no snapshot-gap correction.
+CONT = "metar_6h_group"
 
 
 def test_city_resolution_and_table_loads():
@@ -16,7 +18,8 @@ def test_city_resolution_and_table_loads():
 
 def test_late_afternoon_is_determined():
     # Jul 25 live NYC: 80.1F banked at 4pm -> settles 80 with high confidence.
-    o = settlement_distribution("KNYC", 80.1, 16, recent_temps_f=FALLING)
+    o = settlement_distribution("KNYC", 80.1, 16, recent_temps_f=FALLING,
+                                observed_max_source=CONT)
     assert o.determined and o.top_bucket == 80
     assert o.top_probability > 0.9
     assert bucket_probability(o, 80, 81) > 0.95
@@ -30,13 +33,15 @@ def test_midday_is_not_determined():
 
 
 def test_rounding_boundary_is_flagged():
-    o = settlement_distribution("KPHX", 116.5, 17, recent_temps_f=FALLING)
+    o = settlement_distribution("KPHX", 116.5, 17, recent_temps_f=FALLING,
+                                observed_max_source=CONT)
     assert "rounding boundary" in o.rationale
 
 
 def test_round_half_up_settlement():
     # 116.6F with the day over settles to 117, not 116.
-    o = settlement_distribution("KPHX", 116.6, 17, recent_temps_f=FALLING)
+    o = settlement_distribution("KPHX", 116.6, 17, recent_temps_f=FALLING,
+                                observed_max_source=CONT)
     assert o.top_bucket == 117
 
 
@@ -48,7 +53,8 @@ def test_desert_hours_differ_from_coast():
 
 
 def test_edge_vs_price_math():
-    o = settlement_distribution("KNYC", 80.1, 16, recent_temps_f=FALLING)
+    o = settlement_distribution("KNYC", 80.1, 16, recent_temps_f=FALLING,
+                                observed_max_source=CONT)
     e = edge_vs_price(o, 80, 81, yes_price_cents=89)
     assert e["model_probability"] > 0.95
     assert e["edge_cents"] > 0
@@ -63,16 +69,19 @@ def test_unknown_station_degrades_gracefully():
 def test_still_rising_blocks_determined():
     """2026-07-29: hourly climatology called all three cities determined while every one
     of them was still climbing. The live trace has to veto the unconditional table."""
-    rising = settlement_distribution("KNYC", 80.1, 16, recent_temps_f=[77.0, 79.0, 80.1])
+    rising = settlement_distribution("KNYC", 80.1, 16, recent_temps_f=[77.0, 79.0, 80.1],
+                                    observed_max_source=CONT)
     assert rising.still_rising and not rising.determined
     assert rising.top_probability > 0.9        # climatology alone would have said "yes"
     assert "NOT DETERMINED" in rising.rationale
-    assert settlement_distribution("KNYC", 80.1, 16, recent_temps_f=FALLING).determined
+    assert settlement_distribution("KNYC", 80.1, 16, recent_temps_f=FALLING,
+                                observed_max_source=CONT).determined
 
 
 def test_no_trace_is_treated_as_still_rising():
     # Absent evidence of a turnover, refuse to call the max banked.
-    assert not settlement_distribution("KNYC", 80.1, 16).determined
+    assert not settlement_distribution("KNYC", 80.1, 16,
+                                       observed_max_source=CONT).determined
     assert is_still_rising(None) and is_still_rising([80.0])
 
 
@@ -84,9 +93,35 @@ def test_noise_sized_dip_is_not_a_peak():
 
 def test_distance_is_to_the_half_degree_boundary():
     """2026-07-30 Vegas: 111.02F was 0.48F from settling 112, not 0.98F."""
-    o = settlement_distribution("KLAS", 111.02, 17, recent_temps_f=FALLING)
+    o = settlement_distribution("KLAS", 111.02, 17, recent_temps_f=FALLING,
+                                observed_max_source=CONT)
     assert o.distance_to_boundary_f == 0.48
     assert o.top_bucket == 111
     # Just past the boundary, the next tick is a full degree away again.
-    assert settlement_distribution("KLAS", 111.6, 17,
-                                   recent_temps_f=FALLING).distance_to_boundary_f == 0.9
+    assert settlement_distribution("KLAS", 111.6, 17, recent_temps_f=FALLING,
+                                   observed_max_source=CONT).distance_to_boundary_f == 0.9
+
+
+def test_snapshot_max_is_corrected_upward():
+    """2026-07-29 NYC: our snapshot max read 78.98F and the CLI settled 80.
+
+    The afternoon 6-hour group is not transmitted until 23:51Z, so an in-window snapshot
+    max under-reads the continuous trace by a measured median of ~1F. Treating it as exact
+    is what made the market's 80-81 at 99c look like a mispricing.
+    """
+    snap = settlement_distribution("KNYC", 78.98, 16, recent_temps_f=FALLING,
+                                   observed_max_source="hourly_snapshot")
+    cont = settlement_distribution("KNYC", 78.98, 16, recent_temps_f=FALLING,
+                                   observed_max_source=CONT)
+    assert cont.top_bucket == 79            # taken as exact -> what we wrongly claimed
+    assert snap.top_bucket == 80            # gap convolved -> what actually settled
+    # A snapshot reading is never precise enough to call the settlement locked.
+    assert not snap.determined and cont.determined
+    assert snap.integer_probabilities[80] > snap.integer_probabilities[79]
+
+
+def test_unknown_source_is_treated_as_a_snapshot():
+    # Defaulting to "exact" would silently reintroduce the Jul 29 error.
+    assert (settlement_distribution("KNYC", 78.98, 16, recent_temps_f=FALLING).top_bucket
+            == settlement_distribution("KNYC", 78.98, 16, recent_temps_f=FALLING,
+                                       observed_max_source="hourly_snapshot").top_bucket)

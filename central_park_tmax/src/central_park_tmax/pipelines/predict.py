@@ -186,7 +186,11 @@ def predict_one(
                 # cities at once). See models/post_peak.py.
                 outlook = settlement_distribution(
                     cfg.station.shorthand, float(observed_max), lh,
-                    recent_temps_f=fast_info.get("recent_temps_f"))
+                    recent_temps_f=fast_info.get("recent_temps_f"),
+                    observed_max_source=(
+                        "intraday_cli" if intraday_cli_max is not None
+                        and observed_max <= intraday_cli_max
+                        else row.get("observed_max_so_far_source")))
                 det = outlook.determined
                 ood_info.update(outlook.to_dict())
             spread = None

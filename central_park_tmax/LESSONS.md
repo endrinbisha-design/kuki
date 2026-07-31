@@ -149,13 +149,51 @@ temperature is not the same as being right about the bucket.
 
 ---
 
-## 9. Open — not yet resolved
+## 9. The observed max is biased LOW during exactly the hours we trade
 
-* **2026-07-29 NYC, 79 vs 80.** Our computed max was 78.98 °F (→ 79) from two agreeing
-  sources; the market held 80–81 at 99/100¢ on 73k volume and settled against us.
-  One-minute ASOS is not published for KNYC, so the discrepancy could not be reconciled.
-  Treat a high-volume market disagreement at ≥95¢ as evidence we are missing data, not as
-  an edge — that is the only defensible reading until this is explained.
+*Resolved 2026-07-31. This was the open "79 vs 80" mystery, and the answer is structural.*
+
+**2026-07-29 NYC.** Our max read 78.98 °F (→ 79) from two agreeing sources. The market held
+80–81 at 99/100¢ on 73k volume. The CLI settled **80** at 4:23 PM. The market was right.
+
+Why we could not see it:
+
+1. The METAR **6-hour maximum group** — the continuous trace the CLI settles on — is
+   transmitted only at 05:51/11:51/17:51/23:51 Z. The group covering the **afternoon**
+   (18Z–00Z) does not exist until **7:51 PM EDT**, hours after the trading window closes.
+2. Inside the window the afternoon has only `:51` hourly snapshots, which miss between-obs
+   spikes. On Jul 29 every snapshot after 14:51 read 78 while the trace hit 80.06 at
+   ~4:23 PM.
+
+Measured over 2021–2025 warm seasons (`scripts/snapshot_gap_study.py`), the afternoon
+snapshot max under-reads the continuous max by a **median of ~1.0 °F** in all three cities;
+P(gap ≥ 1 °F) = 50 % NYC, 58 % Phoenix, 45 % Vegas.
+
+**Rules:**
+- Between ~2 PM and ~7:50 PM local, the observed max is a **lower bound biased low by
+  about a degree** — not a fact. Never quote it as "the day's max".
+- A high-volume market pricing **one bucket above** our observed max is evidence we are
+  behind the data, not a mispricing to fade. (This was the right instinct on Jul 29 —
+  I declined to trade it — but for the wrong reason, and only luck made that free.)
+- **Use the ~4:35 PM EDT preliminary CLI.** It is the settlement product, published inside
+  the trading window; the Jul 29 20:32 Z product already said `MAXIMUM 80 at 227 PM`. It
+  beats any METAR reconstruction. Caveat: it is a max-so-far, not a final — Jul 30's
+  4:36 PM preliminary said 73 and the day finished 74 at 5:53 PM.
+
+*In code:* `post_peak.snapshot_gap_percentiles()` + `CONTINUOUS_SOURCES`;
+`settlement_distribution(observed_max_source=...)` convolves the measured gap unless the
+max came from a continuous source, and an unknown source is treated as a snapshot.
+`_try_intraday_cli_max()` in `pipelines/predict.py` already pulls the preliminary CLI —
+the Jul 29 failure was operational, not a missing code path.
+
+*Caveat inherited:* the remaining-rise climatology
+(`scripts/build_remaining_rise.py`) derives its `daily_max` from hourly snapshots too, so
+it cannot see this gap either — that is why it is measured and applied separately.
+
+---
+
+## 10. Open — not yet resolved
+
 * **All strategy ROI figures except the edge-decay study are against a simulated market.**
   `scripts/archive_kalshi_prices.py` runs on a schedule accumulating real prices; the first
   real-price strategy backtest is still pending.
