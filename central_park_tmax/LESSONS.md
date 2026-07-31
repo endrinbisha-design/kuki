@@ -229,8 +229,46 @@ it is the only free check on the number that actually pays.
 
 ---
 
-## 11. Open — not yet resolved
+## 11. At real prices, we have no demonstrated edge — and we are less calibrated than the market
 
-* **All strategy ROI figures except the edge-decay study are against a simulated market.**
-  `scripts/archive_kalshi_prices.py` runs on a schedule accumulating real prices; the first
-  real-price strategy backtest is still pending.
+The simulated-market caveat is now closed. `scripts/real_price_backtest.py` runs the
+observation-anchored strategy against the actual order book (public candlesticks on 68
+settled days × 3 cities, leakage-respecting, net of fees). Full write-up:
+`REAL_PRICE_BACKTEST.md`.
+
+Headline ROI looks positive (+8.3 % at edge ≥ 5 %) and **does not survive scrutiny**:
+
+* Day-clustered bootstrap CI **straddles zero at every threshold** (−4.2 % … +20.9 %).
+  One city-day supplies up to 4 buckets × 6 hours of near-identical information, so 507
+  "trades" are ~173 independent clusters. Resampling rows instead of days would have
+  reported false significance.
+* By-hour ROI alternates sign every hour (+8, −10, +22, −0.3, +22, −24). A real
+  time-window edge would be coherent; this is noise.
+
+The substantive finding is the calibration table: our integer PMF is **overconfident**.
+We say 6 % where the truth is 20 %, and 93 % where the truth is 86 %. In the low bins —
+where the cheap contracts we trade most live — **the market price is closer to the realised
+frequency than our model is**.
+
+That matters because "edge" is defined as `model_p − price`. An overconfident model
+manufactures edge as an artifact. The apparent +6.8 % is best read as the residue of
+miscalibration.
+
+**Rules:**
+- Do not size off `model_p − price` until the PMF is recalibrated against realised
+  frequencies (the backtest now emits the pairs needed to fit it, per city).
+- **The market is the baseline, not zero.** A claim of edge must beat the price.
+- Being right about settlement *mechanics* (204/204 in
+  `kalshi_settlement_validation.py`) is a different claim from being right about
+  *probabilities*. Only the first is currently supported.
+
+---
+
+## 12. Open — not yet resolved
+
+* **Recalibrating the integer PMF** (isotonic/Platt per city) against the realised
+  frequencies in `backtest_datasets/real_price_backtest_trades.csv` — the clear next step,
+  not yet done.
+* **The wide one-sided ranges** that actually worked live (lesson #4) are excluded from the
+  real-price backtest, which covers `between` markets only. That instrument is untested at
+  real prices.

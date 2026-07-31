@@ -14,6 +14,7 @@ and **exact NHIGH temperature-contract probabilities**.
 consolidated operating rules learned from live trading, each pointing at the module that
 enforces it. Supporting analyses: [`POST_PEAK.md`](POST_PEAK.md),
 [`DAILY_STRATEGY.md`](DAILY_STRATEGY.md), [`EDGE_DECAY.md`](EDGE_DECAY.md),
+[`REAL_PRICE_BACKTEST.md`](REAL_PRICE_BACKTEST.md),
 [`HOT_DAY_CALIBRATION.md`](HOT_DAY_CALIBRATION.md),
 [`MOS_MULTIYEAR_BACKTEST.md`](MOS_MULTIYEAR_BACKTEST.md),
 [`MULTI_CITY_COMPARISON.md`](MULTI_CITY_COMPARISON.md), [`SEA_BREEZE.md`](SEA_BREEZE.md),

@@ -1,0 +1,146 @@
+{
+ "n_candidate_quotes": 1964,
+ "by_threshold": {
+  "0.05": {
+   "n": 507,
+   "hit_rate": 0.3314,
+   "mean_price": 0.2917,
+   "roi_pct": 8.28,
+   "pnl_per_contract_c": 2.53
+  },
+  "0.1": {
+   "n": 380,
+   "hit_rate": 0.2737,
+   "mean_price": 0.2417,
+   "roi_pct": 6.79,
+   "pnl_per_contract_c": 1.74
+  },
+  "0.15": {
+   "n": 313,
+   "hit_rate": 0.2396,
+   "mean_price": 0.2116,
+   "roi_pct": 5.94,
+   "pnl_per_contract_c": 1.34
+  }
+ },
+ "by_hour": {
+  "13": {
+   "n": 103,
+   "hit_rate": 0.1845,
+   "mean_price": 0.1564,
+   "roi_pct": 8.42,
+   "pnl_per_contract_c": 1.43
+  },
+  "14": {
+   "n": 91,
+   "hit_rate": 0.1978,
+   "mean_price": 0.2042,
+   "roi_pct": -9.71,
+   "pnl_per_contract_c": -2.13
+  },
+  "15": {
+   "n": 61,
+   "hit_rate": 0.3934,
+   "mean_price": 0.3057,
+   "roi_pct": 22.14,
+   "pnl_per_contract_c": 7.13
+  },
+  "16": {
+   "n": 62,
+   "hit_rate": 0.3065,
+   "mean_price": 0.2918,
+   "roi_pct": -0.26,
+   "pnl_per_contract_c": -0.08
+  },
+  "17": {
+   "n": 44,
+   "hit_rate": 0.4773,
+   "mean_price": 0.3785,
+   "roi_pct": 21.63,
+   "pnl_per_contract_c": 8.49
+  },
+  "18": {
+   "n": 19,
+   "hit_rate": 0.1579,
+   "mean_price": 0.1971,
+   "roi_pct": -24.34,
+   "pnl_per_contract_c": -5.08
+  }
+ },
+ "by_determined": {
+  "True": {
+   "n": 4,
+   "hit_rate": 0.75,
+   "mean_price": 0.6538,
+   "roi_pct": 11.32,
+   "pnl_per_contract_c": 7.62
+  },
+  "False": {
+   "n": 376,
+   "hit_rate": 0.2686,
+   "mean_price": 0.2373,
+   "roi_pct": 6.66,
+   "pnl_per_contract_c": 1.68
+  }
+ },
+ "by_city": {
+  "KXHIGHNY": {
+   "n": 93,
+   "hit_rate": 0.3441,
+   "mean_price": 0.2903,
+   "roi_pct": 12.52,
+   "pnl_per_contract_c": 3.83
+  },
+  "KXHIGHTPHX": {
+   "n": 130,
+   "hit_rate": 0.2,
+   "mean_price": 0.1863,
+   "roi_pct": -0.13,
+   "pnl_per_contract_c": -0.03
+  },
+  "KXHIGHTLV": {
+   "n": 157,
+   "hit_rate": 0.293,
+   "mean_price": 0.2586,
+   "roi_pct": 7.19,
+   "pnl_per_contract_c": 1.96
+  }
+ },
+ "calibration": [
+  {
+   "bin": "0.0-0.2",
+   "n": 871,
+   "mean_model_p": 0.062,
+   "realised": 0.202,
+   "mean_market_price": 0.228
+  },
+  {
+   "bin": "0.2-0.4",
+   "n": 383,
+   "mean_model_p": 0.297,
+   "realised": 0.457,
+   "mean_market_price": 0.437
+  },
+  {
+   "bin": "0.4-0.6",
+   "n": 289,
+   "mean_model_p": 0.488,
+   "realised": 0.45,
+   "mean_market_price": 0.455
+  },
+  {
+   "bin": "0.6-0.8",
+   "n": 261,
+   "mean_model_p": 0.701,
+   "realised": 0.693,
+   "mean_market_price": 0.631
+  },
+  {
+   "bin": "0.8-1.0",
+   "n": 132,
+   "mean_model_p": 0.93,
+   "realised": 0.856,
+   "mean_market_price": 0.835
+  }
+ ]
+}
