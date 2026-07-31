@@ -192,7 +192,44 @@ it cannot see this gap either — that is why it is measured and applied separat
 
 ---
 
-## 10. Open — not yet resolved
+## 10. Kalshi's own settlements are free ground truth — and they caught a live bug
+
+The settled markets are on the public API (no credentials, no manual entry):
+`/markets?series_ticker=KXHIGHNY&status=settled`. Each day's winning `between` market
+pins the settled value to a 2-degree bucket — the number **we actually get paid on**,
+which no other source in this repo was validating against.
+
+Running our settlement reconstruction against all 68 settled days × 3 cities
+(`scripts/kalshi_settlement_validation.py`) immediately failed for NYC: **58/68**, with all
+ten misses in the same direction — we read too high, once by 6 °F.
+
+**Cause:** a 6-hour maximum group covers the period *ending* at the synoptic hour. At KNYC
+(UTC-4) the 05:51 Z report is issued at 01:51 local and carries the 00–06 Z max — **8 PM to
+2 AM of the previous day**. We were attributing it to today, so on any day cooler than the
+one before it, yesterday's evening warmth became today's "observed max". Phoenix and Vegas
+scored 100 % throughout: at UTC-7 the synoptic periods happen to land inside the local day,
+which is precisely why the bug stayed hidden for three cities' worth of work.
+
+This was **not** just a backtest artifact — `settlement_max_so_far()` had the same rule, so
+it would have inflated the live observed max intraday and pushed us to buy a bucket too
+high. After the fix: **204/204, 100 % in all three cities.**
+
+The same run quantifies why the 6-hour group matters at all — agreement using *only*
+hourly snapshots: **NYC 71 %, Phoenix 59 %, Vegas 63 %**. Trading off snapshots alone puts
+you outside the paying bucket a third to
+40 % of the time.
+
+**Rule:** attribute a 6-hour group to the local day its **period** falls in, never the day
+it was transmitted. And validate any settlement logic against Kalshi's settled markets —
+it is the only free check on the number that actually pays.
+
+*In code:* `data/fast_metar.six_hour_group_covers_local_day()`, enforced in
+`settlement_max_so_far()`; validation in `scripts/kalshi_settlement_validation.py` ->
+`backtest_datasets/kalshi_settlement_validation.json`.
+
+---
+
+## 11. Open — not yet resolved
 
 * **All strategy ROI figures except the edge-decay study are against a simulated market.**
   `scripts/archive_kalshi_prices.py` runs on a schedule accumulating real prices; the first

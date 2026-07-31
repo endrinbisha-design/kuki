@@ -1,0 +1,26 @@
+{
+ "KXHIGHNY": {
+  "n": 68,
+  "combined_in_bucket": 68,
+  "snapshot_in_bucket": 48,
+  "misses": [],
+  "combined_agreement": 1.0,
+  "snapshot_agreement": 0.7059
+ },
+ "KXHIGHTPHX": {
+  "n": 68,
+  "combined_in_bucket": 68,
+  "snapshot_in_bucket": 40,
+  "misses": [],
+  "combined_agreement": 1.0,
+  "snapshot_agreement": 0.5882
+ },
+ "KXHIGHTLV": {
+  "n": 68,
+  "combined_in_bucket": 68,
+  "snapshot_in_bucket": 43,
+  "misses": [],
+  "combined_agreement": 1.0,
+  "snapshot_agreement": 0.6324
+ }
+}

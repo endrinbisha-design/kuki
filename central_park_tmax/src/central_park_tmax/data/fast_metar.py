@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from ..logging_config import get_logger
@@ -140,13 +140,41 @@ class SettlementMax:
                 if self.latest_issued_utc else None}
 
 
+def six_hour_group_covers_local_day(issued_utc: datetime, target_date: date,
+                                    utc_offset_hours: int) -> bool:
+    """Does this report's 6-hour maximum group summarise a period inside the local day?
+
+    A 6-hour group reports the max over the period ENDING at the synoptic hour
+    (00/06/12/18 Z); the carrying report is issued a few minutes before it (``:51``). The
+    period therefore describes a six-hour window that may belong to the PREVIOUS local day
+    even though the report timestamp falls on this one.
+
+    Concretely at KNYC (UTC-4), the 05:51 Z report is issued at 01:51 local and carries the
+    00–06 Z max, i.e. **8 PM to 2 AM of the day before**. Treating it as today's data reads
+    the previous evening's warmth as today's max. Measured against 68 real Kalshi
+    settlements this inflated NYC on 10 of 68 days — up to +6 F (2026-07-05: it produced 90
+    when the day settled at 84 or below) — and every error was in the same direction.
+
+    Phoenix and Vegas (UTC-7) were unaffected and scored 100%: their synoptic periods
+    happen to align inside the local day, which is exactly why the bug hid.
+    """
+    end = issued_utc.replace(minute=0, second=0, microsecond=0)
+    if issued_utc.minute > 0:
+        end += timedelta(hours=1)
+    if end.hour % 6 != 0:
+        return False                      # not a synoptic boundary; not a 6-hour group
+    start_local = end - timedelta(hours=6) + timedelta(hours=utc_offset_hours)
+    end_local = end + timedelta(hours=utc_offset_hours)
+    return start_local.date() == target_date and end_local.date() == target_date
+
+
 def settlement_max_so_far(obs: list[FastObservation], target_date: date,
                           utc_offset_hours: int) -> SettlementMax:
     """Best available estimate of the settlement max so far for a local calendar day.
 
     Takes the larger of (a) the max instantaneous temperature across reports and (b) the
-    max 6-hour maximum group — the latter captures spikes between hourly reports and is
-    what the CLI settlement value is derived from.
+    max 6-hour maximum group **whose period lies inside the local day** — the latter
+    captures spikes between hourly reports and is what the CLI settlement derives from.
     """
     todays = [o for o in obs
               if (o.issued_utc.timestamp() + utc_offset_hours * 3600) // 86400
@@ -155,7 +183,9 @@ def settlement_max_so_far(obs: list[FastObservation], target_date: date,
     if not todays:
         return SettlementMax(None, "none", None, None, None)
     hourly = [o.temp_f for o in todays if o.temp_f is not None]
-    six = [o.six_hour_max_f for o in todays if o.six_hour_max_f is not None]
+    six = [o.six_hour_max_f for o in todays
+           if o.six_hour_max_f is not None
+           and six_hour_group_covers_local_day(o.issued_utc, target_date, utc_offset_hours)]
     h_max = max(hourly) if hourly else None
     s_max = max(six) if six else None
     # ``obs`` (and therefore ``todays``) is newest-first; the trace wants chronological.
