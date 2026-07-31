@@ -15,6 +15,7 @@ Two operating modes:
 """
 from __future__ import annotations
 
+import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Callable, Optional
@@ -35,6 +36,20 @@ from ..time_utils import resolve_vintage, to_utc
 from .context import daily_history_from_ghcn, synthetic_daily_history
 
 log = get_logger(__name__)
+
+
+def _atomic_to_csv(df: pd.DataFrame, out_path: Path) -> None:
+    """Write ``df`` to ``out_path`` atomically.
+
+    Long builds are routinely interrupted (proxy drops, container restarts). A plain
+    ``to_csv`` truncates the destination before the new bytes land, so a kill mid-write
+    destroys the checkpoint the build resumes from. Writing to a sibling temp file and
+    ``os.replace``-ing it means the destination is only ever the old file or the complete
+    new one, never a partial.
+    """
+    tmp = out_path.with_name(out_path.name + ".tmp")
+    df.to_csv(tmp, index=False)
+    os.replace(tmp, out_path)
 
 
 def _date_range(start: date, end: date):
@@ -127,11 +142,11 @@ def build_dataset(
 
         # Checkpoint after each date that added rows (atomic replace; cheap at this scale).
         if save and date_had_new and rows:
-            pd.DataFrame(rows).to_csv(out_path, index=False)
+            _atomic_to_csv(pd.DataFrame(rows), out_path)
 
     df = pd.DataFrame(rows)
     if save and not df.empty:
-        df.to_csv(out_path, index=False)
+        _atomic_to_csv(df, out_path)
         _write_schema(cfg, df, synthetic)
         write_manifest(Path(cfg.paths.processed_dir) / "dataset_manifest.json", [out_path],
                        extra={"n_rows": len(df), "synthetic": synthetic,
