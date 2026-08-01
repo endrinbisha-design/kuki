@@ -138,3 +138,48 @@ part that is measurably strong — settlement **mechanics** (204/204 in
 `kalshi_settlement_validation.py`): knowing precisely what the banked observations imply
 once the max is genuinely in, from a continuous source. That is arithmetic, not
 forecasting, and it is a much narrower claim than "we can price these contracts."
+
+---
+
+# The 1:51 PM signal, traded with $100
+
+`scripts/bet_after_1351_backtest.py` tests the most promising-looking setup we have: bet
+right after the 13:51 EDT observation, which carries the 6-hour maximum group covering
+8 AM–2 PM — the first **continuous-source** reading of the day, and the one that revealed a
+1.08 °F spike on 2026-07-31 that hourly snapshots never showed.
+
+$100 bankroll, 20 % staked per qualifying day, filled at the **ask** from the candle closing
+at 14:00 local (~7 minutes after the signal), net of the Kalshi taker fee. NYC only — the
+13:51 timing is specific to UTC-4.
+
+| rule | final | bets | hit rate | max DD | mean/bet | 95 % CI | P(≤0) |
+|---|---|---|---|---|---|---|---|
+| MODEL_TOP | $12.04 | 62 | 56.5 % | 88 % | −5.4 % | −32.5 … +26.2 | 0.65 |
+| MODEL_EDGE | $13.50 | 25 | 24.0 % | 95 % | −14.4 % | −77 … +69 | 0.68 |
+| MARKET_FAVOURITE | $5.83 | 62 | 56.5 % | 97 % | −12.4 % | −37.7 … +19.2 | 0.80 |
+| MODEL_BEATS_MKT | $99.88 | 7 | 42.9 % | 59 % | — | too few | — |
+
+**The signal is already priced.** `MODEL_BEATS_MKT` fired on only **7 of 62 days** — our
+model and the market pick the same bucket 89 % of the time, and their hit rates are
+identical to three decimals (0.565). Whatever the 6-hour group reveals, the market has it
+within minutes.
+
+**A 56.5 % hit rate still loses** because it is a favourite-buying strategy: paying ~60 ¢
+plus fee to win 56.5 % of the time bleeds ~5 % a bet.
+
+**Sizing is a separate lesson.** −5.4 % per bet became −88 % of bankroll purely through
+volatility drag at a 20 % stake. Even a break-even edge would have lost money at that size.
+
+## The bug this run caught, and how
+
+The first version returned **$100 → $4.2 million** and +207 % mean return per bet.
+
+Cause: the 36-hour candle window contains **two** candles at local hour 14 — the market
+closes at 00:59 local the *following* day — and the selector took the first match, i.e. the
+**previous day's price**. It bought yesterday's 2 ¢ out-of-the-money buckets and settled them
+against today's outcome. `fill_price()` now matches the exact target timestamp.
+
+The tell was not the size of the profit but the **benchmark**: `MARKET_FAVOURITE` "won" only
+29 % of the time, when buying the market's own favourite must hit near 50–60 %. That is the
+reason to always carry a benchmark whose plausible range you know in advance — it catches
+lookahead bugs that a headline return never will.

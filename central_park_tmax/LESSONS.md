@@ -272,7 +272,31 @@ Brier (0.12–0.15 vs 0.18–0.21) in every city. **Do not trade `model_p − pr
 
 ---
 
-## 12. Open — not yet resolved
+## 12. Always carry a benchmark whose plausible range you know
+
+The 1:51 PM signal backtest (`REAL_PRICE_BACKTEST.md`) first returned **$100 → $4.2 million**,
++207 % per bet. The cause was a lookahead bug: the 36-hour candle window contains two candles
+at local hour 14 (the market closes at 00:59 local the *next* day) and the selector took the
+first — the **previous day's price**. It was buying yesterday's 2 ¢ out-of-the-money buckets
+and settling them against today's outcome.
+
+Nothing about the profit itself proved it was wrong; spectacular backtests are exactly what
+a lookahead bug produces. **The benchmark caught it**: `MARKET_FAVOURITE` — buy whatever the
+market likes most — "won" only 29 % of the time, and buying a market favourite *must* hit
+near 50–60 %. An impossible benchmark result is the cheapest bug detector available.
+
+**Rule:** every backtest carries a control whose plausible range is known in advance. Check
+the control before reading the strategy. A headline return can't falsify itself.
+
+**Corrected result, for the record:** the strategy loses. −5.4 % per bet, and the model picks
+the same bucket as the market on 55 of 62 days — by 1:51 PM the 6-hour group is fully priced.
+
+*In code:* `scripts/bet_after_1351_backtest.py` (`fill_price` matches the exact target
+timestamp; four rules including the market-favourite control).
+
+---
+
+## 13. Open — not yet resolved
 * **The wide one-sided ranges** that actually worked live (lesson #4) are excluded from the
   real-price backtest, which covers `between` markets only. That instrument is untested at
   real prices.

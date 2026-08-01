@@ -104,31 +104,39 @@ def settled_by_day() -> dict[dt.date, list[dict]]:
     return out
 
 
-def fill_price(ticker: str, close_iso: str) -> tuple[float, float] | None:
-    """(ask, bid) from the candle closing at 14:00 local — our fill, ~7 min post-signal."""
+def fill_price(ticker: str, close_iso: str, day: dt.date) -> tuple[float, float] | None:
+    """(ask, bid) from the candle closing at 14:00 local ON ``day`` — our fill.
+
+    The exact timestamp is required, not merely "a candle whose local hour is 14". The
+    36-hour lookback window contains TWO such candles (the market closes at 00:59 local
+    the following day), and taking the first match silently used the PREVIOUS day's price:
+    buying yesterday's cheap out-of-the-money buckets and settling them against today's
+    outcome. That bug produced a $100 -> $4.2M backtest and a +207% mean return per bet,
+    with the tell being that following the market's own favourite "won" only 29% of the
+    time. Matching the target timestamp removes it.
+    """
     try:
         end = int(dt.datetime.fromisoformat(close_iso.replace("Z", "+00:00")).timestamp())
     except Exception:
         return None
+    target = int((dt.datetime.combine(day, dt.time(FILL_CANDLE_LOCAL_HOUR, 0),
+                                      tzinfo=dt.timezone.utc)
+                  - dt.timedelta(hours=OFFSET)).timestamp())
     d = _get(f"{BASE}/series/{SERIES}/markets/{ticker}/candlesticks"
              f"?start_ts={end - 36*3600}&end_ts={end}&period_interval=60")
     for c in d.get("candlesticks", []):
-        ts = c.get("end_period_ts")
-        if ts is None:
-            continue
-        lt = dt.datetime.fromtimestamp(ts, dt.timezone.utc) + dt.timedelta(hours=OFFSET)
-        if lt.hour != FILL_CANDLE_LOCAL_HOUR:
+        if c.get("end_period_ts") != target:
             continue
         try:
             a = (c.get("yes_ask") or {}).get("close_dollars")
             b = (c.get("yes_bid") or {}).get("close_dollars")
             if a in (None, "") or b in (None, ""):
-                continue
+                return None
             a, b = float(a), float(b)
             if 0 < a <= 1 and 0 <= b <= 1:
                 return a, b
         except Exception:
-            continue
+            return None
     return None
 
 
@@ -213,7 +221,7 @@ def main() -> int:
             lo, hi = m.get("floor_strike"), m.get("cap_strike")
             if lo is None or hi is None:
                 continue
-            px = fill_price(m["ticker"], m.get("close_time", ""))
+            px = fill_price(m["ticker"], m.get("close_time", ""), day)
             time.sleep(0.10)
             if px is None:
                 continue
