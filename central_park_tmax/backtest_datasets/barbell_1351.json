@@ -1,0 +1,59 @@
+{
+ "all days": {
+  "final": 24.79,
+  "n_core": 60,
+  "core_hits": 26,
+  "core_pnl": -69.21,
+  "n_sat": 2,
+  "sat_hits": 0,
+  "sat_pnl": -6.0
+ },
+ "DRY only": {
+  "final": 115.08,
+  "n_core": 32,
+  "core_hits": 15,
+  "core_pnl": 18.08,
+  "n_sat": 1,
+  "sat_hits": 0,
+  "sat_pnl": -3.0
+ },
+ "WET only": {
+  "final": 9.71,
+  "n_core": 28,
+  "core_hits": 11,
+  "core_pnl": -87.29,
+  "n_sat": 1,
+  "sat_hits": 0,
+  "sat_pnl": -3.0
+ },
+ "core_all days": {
+  "final": 30.79,
+  "n": 60,
+  "mean_pct": -5.77,
+  "ci95": [
+   -42.07,
+   36.13
+  ],
+  "p_le_0": 0.621
+ },
+ "core_DRY only": {
+  "final": 118.08,
+  "n": 32,
+  "mean_pct": 2.83,
+  "ci95": [
+   -44.22,
+   65.48
+  ],
+  "p_le_0": 0.488
+ },
+ "core_WET only": {
+  "final": 12.71,
+  "n": 28,
+  "mean_pct": -15.59,
+  "ci95": [
+   -64.69,
+   50.12
+  ],
+  "p_le_0": 0.722
+ }
+}
