@@ -17,10 +17,12 @@ Nothing in this script recommends a position. It prints state; the judgement sta
 """
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import json
 import re
 import sys
+import time
 import urllib.request
 from pathlib import Path
 
@@ -106,18 +108,65 @@ def preliminary_cli(target: dt.date) -> str | None:
     return None
 
 
+def _latest_issue(raw: str, now: dt.datetime) -> dt.datetime | None:
+    obs = parse_metar_block(raw, now)
+    return obs[0].issued_utc if obs else None
+
+
+def fetch_waiting_for_new_ob(now: dt.datetime, wait_secs: int, poll_secs: int = 15) -> str:
+    """Fetch METARs, polling until an observation NEWER than the last one appears.
+
+    KNYC reports at :51 but transmission lands a minute or three later, and the delay is
+    not fixed. A fixed offset either fires early on stale data (which was reported as an
+    "update" on 2026-07-31 when nothing had changed) or pads needlessly. Polling reports as
+    soon as the data actually exists, which is both faster and safer than guessing.
+
+    Returns the freshest raw block available; on timeout returns what we have rather than
+    failing, and main() prints the observation age so staleness is always visible.
+    """
+    url = "https://aviationweather.gov/api/data/metar?ids=KNYC&format=raw&hours=16"
+    raw = _text(url)
+    if wait_secs <= 0:
+        return raw
+    baseline = _latest_issue(raw, now)
+    deadline = time.monotonic() + wait_secs
+    while time.monotonic() < deadline:
+        time.sleep(poll_secs)
+        fresh = _text(url)
+        latest = _latest_issue(fresh, dt.datetime.now(dt.timezone.utc))
+        if latest is not None and (baseline is None or latest > baseline):
+            waited = wait_secs - int(deadline - time.monotonic())
+            print(f"  (new observation arrived after ~{waited}s of polling)")
+            return fresh
+        raw = fresh
+    print(f"  (no new observation within {wait_secs}s — reporting the latest available)")
+    return raw
+
+
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--wait", type=int, default=0, metavar="SECS",
+                    help="poll up to SECS for an observation newer than the current one")
+    args = ap.parse_args()
+
     now = dt.datetime.now(dt.timezone.utc)
     local = now + dt.timedelta(hours=OFFSET)
     day = local.date()
     print(f"=== KNYC {local:%Y-%m-%d %H:%M} EDT ===")
 
-    raw_metar = _text("https://aviationweather.gov/api/data/metar?ids=KNYC&format=raw&hours=16")
+    raw_metar = fetch_waiting_for_new_ob(now, args.wait)
+    now = dt.datetime.now(dt.timezone.utc)
+    local = now + dt.timedelta(hours=OFFSET)
     obs = parse_metar_block(raw_metar, now)
     sm = settlement_max_so_far(obs, day, OFFSET)
     if sm.best_max_f is None:
         print("  observations UNAVAILABLE")
         return 1
+    latest_ob = max((o.issued_utc for o in obs if o.temp_f is not None), default=None)
+    if latest_ob is not None:
+        age = (now - latest_ob).total_seconds() / 60
+        print(f"  latest ob  : {(latest_ob + dt.timedelta(hours=OFFSET)):%H:%M} EDT "
+              f"({age:.0f} min old)")
     print(f"  max so far : {sm.best_max_f:.2f} F  via {sm.source}"
           f"  (hourly {sm.hourly_max_f}, in-day 6h group {sm.six_hour_max_f})")
     print(f"  trace      : {[round(t, 1) for t in sm.recent_temps_f[-8:]]}")
