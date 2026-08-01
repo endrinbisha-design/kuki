@@ -145,41 +145,60 @@ forecasting, and it is a much narrower claim than "we can price these contracts.
 
 `scripts/bet_after_1351_backtest.py` tests the most promising-looking setup we have: bet
 right after the 13:51 EDT observation, which carries the 6-hour maximum group covering
-8 AM–2 PM — the first **continuous-source** reading of the day, and the one that revealed a
-1.08 °F spike on 2026-07-31 that hourly snapshots never showed.
+8 AM–2 PM — the first **continuous-source** reading of the day. On 2026-07-31 that group
+read 84.02 °F while hourly snapshots had only reached 82.94; on 2026-08-01 it read 86.00 vs
+84.92, and the official CLI later confirmed **86 at 12:50 PM**. The signal is real and it is
+correct. The question is whether it is *tradeable*.
 
-$100 bankroll, 20 % staked per qualifying day, filled at the **ask** from the candle closing
-at 14:00 local (~7 minutes after the signal), net of the Kalshi taker fee. NYC only — the
-13:51 timing is specific to UTC-4.
+Fill at the **ask** from the candle closing at 14:00 local (~7 min after the signal), net of
+the Kalshi taker fee, price capped at 90 ¢, NYC only, 62 days.
 
-| rule | final | bets | hit rate | max DD | mean/bet | 95 % CI | P(≤0) |
-|---|---|---|---|---|---|---|---|
-| MODEL_TOP | $12.04 | 62 | 56.5 % | 88 % | −5.4 % | −32.5 … +26.2 | 0.65 |
-| MODEL_EDGE | $13.50 | 25 | 24.0 % | 95 % | −14.4 % | −77 … +69 | 0.68 |
-| MARKET_FAVOURITE | $5.83 | 62 | 56.5 % | 97 % | −12.4 % | −37.7 … +19.2 | 0.80 |
-| MODEL_BEATS_MKT | $99.88 | 7 | 42.9 % | 59 % | — | too few | — |
+## Reasonable staking, reasonable rules
 
-**The signal is already priced.** `MODEL_BEATS_MKT` fired on only **7 of 62 days** — our
-model and the market pick the same bucket 89 % of the time, and their hit rates are
-identical to three decimals (0.565). Whatever the 6-hour group reveals, the market has it
-within minutes.
+| rule | final | bets | hit | mean/bet | 95 % CI | P(≤0) |
+|---|---|---|---|---|---|---|
+| EDGE ≥ 5 % | $101.64 | 27 | 30 % | +0.6 % | −63 … +85 | 0.52 |
+| EDGE ≥ 15 % | $143.34 | 11 | 36 % | +39 % | −76 … +200 | 0.33 |
+| EDGE ≥ 25 % | $60.00 | 4 | **0 %** | −100 % | — | 1.00 |
+| **LOCK** | **never fires** | **0** | — | — | — | — |
+| MARKET_FAVOURITE | $61.86 | 55 | 45 % | −6.9 % | −44 … +42 | 0.65 |
 
-**A 56.5 % hit rate still loses** because it is a favourite-buying strategy: paying ~60 ¢
-plus fee to win 56.5 % of the time bleeds ~5 % a bet.
+Quarter-Kelly produces the same bets with gentler paths ($107.75 on EDGE ≥ 5 %).
 
-**Sizing is a separate lesson.** −5.4 % per bet became −88 % of bankroll purely through
-volatility drag at a 20 % stake. Even a break-even edge would have lost money at that size.
+## Three findings
 
-## The bug this run caught, and how
+**1. `LOCK` never fires — zero opportunities in 62 days.** That rule buys only when the
+banked 6-hour group makes a bucket ≥ 90 % likely *and* it is still priced ≥ 5 ¢ below that.
+It never happened. Watched live on 2026-08-01: the group transmitted ~13:52 and the book
+was **89/90 ¢ on 86–87 by 13:53**, reaching 94 ¢ by 13:56 from 52 ¢ at 13:14. The arithmetic
+certainty is genuine; the market simply has it first. **Being right at the same moment as
+the market is worth nothing.**
 
-The first version returned **$100 → $4.2 million** and +207 % mean return per bet.
+**2. The edge thresholds run backwards.** +0.6 % at 5 %, +39 % at 15 %, **−100 % at 25 %**
+(0 for 4). A real signal improves as you demand more edge. Instead the largest apparent
+gaps lost every time — precisely what the tail miscalibration documented above predicts,
+since the biggest gaps arise where our probabilities are worst. The +39 % on 11 bets with a
+CI of −76 to +200 is noise, not a result.
 
-Cause: the 36-hour candle window contains **two** candles at local hour 14 — the market
-closes at 00:59 local the *following* day — and the selector took the first match, i.e. the
-**previous day's price**. It bought yesterday's 2 ¢ out-of-the-money buckets and settled them
-against today's outcome. `fill_price()` now matches the exact target timestamp.
+**3. Sizing was doing most of the damage, but it was not hiding an edge.** An earlier run
+staked 20 % of bankroll per day and finished at **$12** (−88 %). The same signal at a flat
+$10 stake finishes at **$101.64**. That is a real lesson about volatility drag destroying a
+near-breakeven edge — but breakeven is what lies underneath, and P(≤0) = 0.52 is a coin
+flip.
 
-The tell was not the size of the profit but the **benchmark**: `MARKET_FAVOURITE` "won" only
-29 % of the time, when buying the market's own favourite must hit near 50–60 %. That is the
-reason to always carry a benchmark whose plausible range you know in advance — it catches
-lookahead bugs that a headline return never will.
+## Verdict
+
+**There is no reasonable way to trade the 1:51 signal profitably.** The observation is
+accurate and timely; the market prices it within a minute of transmission. This is the
+`EDGE_DECAY.md` finding in its sharpest form.
+
+## Bug caught in the first version (kept as a warning)
+
+The initial run reported **$100 → $4.2 million** and +207 % per bet. The 36-hour candle
+window contains TWO candles at local hour 14 (the market closes at 00:59 local the next
+day) and the code took the first — the PREVIOUS day's price. It was buying yesterday's 2 ¢
+out-of-the-money buckets and settling them against today's outcome.
+
+The tell was in the output: `MARKET_FAVOURITE` "won" only **29 %** of the time. Buying the
+market's own favourite must hit near 50–60 %. A benchmark that behaves impossibly is the
+cheapest bug detector available, which is why one belongs in every backtest here.

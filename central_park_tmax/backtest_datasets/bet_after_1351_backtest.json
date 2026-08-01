@@ -1,49 +1,104 @@
 {
- "MODEL_TOP": {
-  "final_bankroll": 12.04,
-  "n_bets": 62,
-  "win_rate": 0.565,
-  "max_drawdown_pct": 88.3,
-  "total_return_pct": -88.0,
-  "mean_bet_return_pct": -5.41,
+ "flat:EDGE_05": {
+  "final_bankroll": 101.64,
+  "n_bets": 27,
+  "hit_rate": 0.296,
+  "max_drawdown_pct": 84.1,
+  "mean_bet_return_pct": 0.61,
   "ci95_pct": [
-   -32.52,
-   26.18
+   -63.31,
+   84.83
   ],
-  "p_le_0": 0.655
+  "p_le_0": 0.524
  },
- "MODEL_EDGE": {
-  "final_bankroll": 13.5,
-  "n_bets": 25,
-  "win_rate": 0.24,
-  "max_drawdown_pct": 95.0,
-  "total_return_pct": -86.5,
-  "mean_bet_return_pct": -14.42,
+ "flat:EDGE_15": {
+  "final_bankroll": 143.34,
+  "n_bets": 11,
+  "hit_rate": 0.364,
+  "max_drawdown_pct": 43.3,
+  "mean_bet_return_pct": 39.4,
   "ci95_pct": [
-   -77.07,
-   68.99
+   -76.08,
+   199.69
   ],
-  "p_le_0": 0.678
+  "p_le_0": 0.328
  },
- "MARKET_FAVOURITE": {
-  "final_bankroll": 5.83,
-  "n_bets": 62,
-  "win_rate": 0.565,
-  "max_drawdown_pct": 96.7,
-  "total_return_pct": -94.2,
-  "mean_bet_return_pct": -12.38,
+ "flat:EDGE_25": {
+  "final_bankroll": 60.0,
+  "n_bets": 4,
+  "hit_rate": 0.0,
+  "max_drawdown_pct": 40.0,
+  "mean_bet_return_pct": -100.0,
   "ci95_pct": [
-   -37.68,
-   19.25
+   -100.0,
+   -100.0
   ],
-  "p_le_0": 0.804
+  "p_le_0": 1.0
  },
- "MODEL_BEATS_MKT": {
-  "final_bankroll": 99.88,
-  "n_bets": 7,
-  "win_rate": 0.429,
-  "max_drawdown_pct": 59.0,
-  "total_return_pct": -0.1,
-  "mean_bet_return_pct": null
+ "flat:LOCK": {
+  "n": 0
+ },
+ "flat:MARKET_FAVOURITE": {
+  "final_bankroll": 61.86,
+  "n_bets": 55,
+  "hit_rate": 0.455,
+  "max_drawdown_pct": 75.2,
+  "mean_bet_return_pct": -6.93,
+  "ci95_pct": [
+   -44.16,
+   41.45
+  ],
+  "p_le_0": 0.649
+ },
+ "kelly:EDGE_05": {
+  "final_bankroll": 107.75,
+  "n_bets": 27,
+  "hit_rate": 0.296,
+  "max_drawdown_pct": 37.7,
+  "mean_bet_return_pct": 0.61,
+  "ci95_pct": [
+   -63.31,
+   84.83
+  ],
+  "p_le_0": 0.524
+ },
+ "kelly:EDGE_15": {
+  "final_bankroll": 114.63,
+  "n_bets": 11,
+  "hit_rate": 0.364,
+  "max_drawdown_pct": 29.5,
+  "mean_bet_return_pct": 39.4,
+  "ci95_pct": [
+   -76.08,
+   199.69
+  ],
+  "p_le_0": 0.328
+ },
+ "kelly:EDGE_25": {
+  "final_bankroll": 66.32,
+  "n_bets": 4,
+  "hit_rate": 0.0,
+  "max_drawdown_pct": 33.7,
+  "mean_bet_return_pct": -100.0,
+  "ci95_pct": [
+   -100.0,
+   -100.0
+  ],
+  "p_le_0": 1.0
+ },
+ "kelly:LOCK": {
+  "n": 0
+ },
+ "kelly:MARKET_FAVOURITE": {
+  "final_bankroll": 93.69,
+  "n_bets": 16,
+  "hit_rate": 0.25,
+  "max_drawdown_pct": 27.9,
+  "mean_bet_return_pct": -16.01,
+  "ci95_pct": [
+   -89.58,
+   99.23
+  ],
+  "p_le_0": 0.666
  }
 }

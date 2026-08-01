@@ -199,6 +199,11 @@ def signal_state(obs: pd.DataFrame, day: dt.date):
 
 
 def main() -> int:
+    cache = OUT / "bet_after_1351_rows.json"
+    if cache.exists() and "--refresh" not in sys.argv:
+        rows = json.loads(cache.read_text())
+        print(f"loaded {len(rows)} cached day-rows (use --refresh to refetch)", flush=True)
+        return analyse(rows)
     by_day = settled_by_day()
     days = sorted(by_day)
     print(f"{SERIES}: {len(days)} settled days {days[0]} .. {days[-1]}", flush=True)
@@ -239,79 +244,104 @@ def main() -> int:
     if not rows:
         print("no tradeable days reconstructed")
         return 1
+    (OUT / "bet_after_1351_rows.json").write_text(
+        json.dumps([{**r, "date": str(r["date"])} for r in rows]))
+    return analyse(rows)
 
-    def pick(day_row, rule):
-        c = day_row["cands"]
-        model_top = max(c, key=lambda x: x["p"])
-        mkt_fav = max(c, key=lambda x: x["ask"])
-        if rule == "MODEL_TOP":
-            return model_top
-        if rule == "MODEL_EDGE":
-            best = max(c, key=lambda x: x["p"] - x["ask"])
-            return best if (best["p"] - best["ask"]) >= EDGE_THRESHOLD else None
-        if rule == "MARKET_FAVOURITE":
-            return mkt_fav
-        if rule == "MODEL_BEATS_MKT":
-            return model_top if model_top["bucket"] != mkt_fav["bucket"] else None
+
+
+# ---------------------------------------------------------------- rule + sizing --------
+# "Reasonable" means three things the first version got wrong:
+#   1. FLAT or KELLY staking, not 20% of bankroll every day. A -5% per-bet edge compounded
+#      at 20% turned into -88% purely through volatility drag; sizing was doing more damage
+#      than the signal.
+#   2. A PRICE CAP. Buying the favourite at 95c to win 5c is not a bet, it is a fee. Any
+#      sane rule declines to pay up for near-certainties.
+#   3. PERMISSION TO SKIP. A strategy that must trade every day is not a strategy.
+FLAT_STAKE = 10.0          # dollars risked per qualifying day
+KELLY_FRACTION = 0.25      # quarter-Kelly; full Kelly on 68 noisy days is reckless
+MAX_PRICE = 0.90           # never pay above this
+MIN_PRICE = 0.05
+
+
+def pick(cands, rule):
+    """Choose one contract to buy, or None to sit out."""
+    ok = [c for c in cands if MIN_PRICE <= c["ask"] <= MAX_PRICE]
+    if not ok:
         return None
+    if rule == "MARKET_FAVOURITE":
+        return max(ok, key=lambda x: x["ask"])
+    best = max(ok, key=lambda x: x["p"] - x["ask"])
+    edge = best["p"] - best["ask"]
+    if rule == "EDGE_05":
+        return best if edge >= 0.05 else None
+    if rule == "EDGE_15":
+        return best if edge >= 0.15 else None
+    if rule == "EDGE_25":
+        return best if edge >= 0.25 else None
+    if rule == "LOCK":
+        # only when the banked observation makes a bucket near-certain AND it is not
+        # already priced as such: the arithmetic bet, not the forecast bet.
+        lock = [c for c in ok if c["p"] >= 0.90 and c["ask"] <= c["p"] - 0.05]
+        return max(lock, key=lambda x: x["p"] - x["ask"]) if lock else None
+    return None
 
+
+def stake_for(rule_sizing, bank, sel):
+    if rule_sizing == "flat":
+        return min(FLAT_STAKE, bank)
+    p, cost = sel["p"], sel["ask"] + fee_dollars(sel["ask"])
+    b = (1.0 - cost) / cost if cost > 0 else 0.0          # net odds received
+    k = (p * (b + 1) - 1) / b if b > 0 else 0.0           # Kelly fraction
+    return max(0.0, min(bank * max(k, 0.0) * KELLY_FRACTION, bank))
+
+
+def analyse(rows) -> int:
+    rules = ["EDGE_05", "EDGE_15", "EDGE_25", "LOCK", "MARKET_FAVOURITE"]
     results = {}
-    print(f"\n=== $100 bankroll, {STAKE_FRACTION:.0%} of bankroll staked per qualifying day, "
-          f"filled at the ASK, net of fees ===")
-    for rule in ("MODEL_TOP", "MODEL_EDGE", "MARKET_FAVOURITE", "MODEL_BEATS_MKT"):
-        bank, peak, mdd, n, wins, curve = START_BANKROLL, START_BANKROLL, 0.0, 0, 0, []
-        daily = []
-        for r in rows:
-            sel = pick(r, rule)
-            if sel is None:
-                curve.append(bank)
+    print(f"\n=== ${START_BANKROLL:.0f} start | fill at the ASK, net of fees | "
+          f"price capped at {MAX_PRICE:.0%} | {len(rows)} days ===")
+    for sizing in ("flat", "kelly"):
+        lab = f"flat ${FLAT_STAKE:.0f}" if sizing == "flat" else f"{KELLY_FRACTION:.2f}-Kelly"
+        print(f"\n-- staking: {lab} --")
+        print(f"  {'rule':17} {'final':>10} {'bets':>5} {'hit':>6} {'maxDD':>7} "
+              f"{'mean/bet':>9} {'CI95':>20} {'P(<=0)':>7}")
+        for rule in rules:
+            bank, peak, mdd, n, wins = START_BANKROLL, START_BANKROLL, 0.0, 0, 0
+            rets = []
+            for r in rows:
+                sel = pick(r["cands"], rule)
+                if sel is None:
+                    continue
+                stake = stake_for(sizing, bank, sel)
+                if stake <= 0.01:
+                    continue
+                unit = sel["ask"] + fee_dollars(sel["ask"])
+                payout = (stake / unit) * (1.0 if sel["won"] else 0.0)
+                bank = bank - stake + payout
+                rets.append((1.0 if sel["won"] else 0.0) / unit - 1.0)
+                n += 1
+                wins += int(sel["won"])
+                peak = max(peak, bank)
+                mdd = max(mdd, (peak - bank) / peak)
+            if n == 0:
+                print(f"  {rule:17} {'no qualifying bets':>10}")
+                results[f"{sizing}:{rule}"] = {"n": 0}
                 continue
-            stake = bank * STAKE_FRACTION
-            unit = sel["ask"] + fee_dollars(sel["ask"])
-            contracts = stake / unit
-            payout = contracts * (1.0 if sel["won"] else 0.0)
-            before = bank
-            bank = bank - stake + payout
-            daily.append((bank - before) / before)
-            n += 1
-            wins += int(sel["won"])
-            peak = max(peak, bank)
-            mdd = max(mdd, (peak - bank) / peak)
-            curve.append(bank)
-        results[rule] = {"final_bankroll": round(bank, 2), "n_bets": n,
-                         "win_rate": round(wins / n, 3) if n else None,
-                         "max_drawdown_pct": round(mdd * 100, 1),
-                         "total_return_pct": round((bank / START_BANKROLL - 1) * 100, 1)}
-        r = results[rule]
-        print(f"  {rule:17} ${r['final_bankroll']:>9,.2f}  ({r['total_return_pct']:+7.1f}%)  "
-              f"bets={r['n_bets']:3}  hit={r['win_rate']}  maxDD={r['max_drawdown_pct']}%")
-
-    # Day-clustered bootstrap on the per-bet return, the honest error bar.
-    print("\n=== bootstrap over days (per-bet return) ===")
-    for rule in results:
-        rets = []
-        b = START_BANKROLL
-        for r in rows:
-            sel = pick(r, rule)
-            if sel is None:
-                continue
-            unit = sel["ask"] + fee_dollars(sel["ask"])
-            rets.append((1.0 if sel["won"] else 0.0) / unit - 1.0)
-        if len(rets) < 10:
-            print(f"  {rule:17} too few bets ({len(rets)})")
-            results[rule]["mean_bet_return_pct"] = None
-            continue
-        a = np.array(rets)
-        rng = np.random.default_rng(0)
-        boots = [rng.choice(a, size=len(a), replace=True).mean() for _ in range(4000)]
-        lo, hi = np.percentile(boots, [2.5, 97.5])
-        results[rule].update({"mean_bet_return_pct": round(float(a.mean()) * 100, 2),
-                              "ci95_pct": [round(float(lo) * 100, 2), round(float(hi) * 100, 2)],
-                              "p_le_0": round(float((np.array(boots) <= 0).mean()), 3)})
-        print(f"  {rule:17} mean {a.mean()*100:+6.2f}% per bet  "
-              f"CI95 [{lo*100:+.1f}%, {hi*100:+.1f}%]  P(<=0)={(np.array(boots)<=0).mean():.2f}  "
-              f"n={len(a)}")
-
+            a = np.array(rets)
+            rng = np.random.default_rng(0)
+            boots = np.array([rng.choice(a, size=len(a), replace=True).mean()
+                              for _ in range(4000)])
+            lo, hi = np.percentile(boots, [2.5, 97.5])
+            results[f"{sizing}:{rule}"] = {
+                "final_bankroll": round(bank, 2), "n_bets": n,
+                "hit_rate": round(wins / n, 3), "max_drawdown_pct": round(mdd * 100, 1),
+                "mean_bet_return_pct": round(float(a.mean()) * 100, 2),
+                "ci95_pct": [round(float(lo) * 100, 2), round(float(hi) * 100, 2)],
+                "p_le_0": round(float((boots <= 0).mean()), 3)}
+            print(f"  {rule:17} ${bank:>9,.2f} {n:>5} {wins/n:>6.2f} {mdd*100:>6.1f}% "
+                  f"{a.mean()*100:>+8.2f}% {f'[{lo*100:+.1f},{hi*100:+.1f}]':>20} "
+                  f"{(boots<=0).mean():>7.2f}")
     (OUT / "bet_after_1351_backtest.json").write_text(json.dumps(results, indent=1))
     print(f"\nwrote {OUT/'bet_after_1351_backtest.json'}")
     return 0
