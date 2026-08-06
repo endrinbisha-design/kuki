@@ -4,6 +4,7 @@
 |----:|------|----------|:-------------:|:----------:|-------|
 | 1 | 2026-07-20 | Options foundations | ___ / 5 | ___ / 5 | |
 | 2 | 2026-07-22 | Returns, volatility & the lognormal picture | ___ / 5 | ___ / 5 | |
+| 3 | 2026-08-06 | No-arbitrage, replication & risk-neutral pricing | ___ / 5 | ___ / 10 (big) | |
 
-**Current position:** Day 2 complete → next is Day 3 (no-arbitrage / risk-neutral pricing).
-**Next big quiz:** Day 3 (covers Days 1–3).
+**Current position:** Day 3 complete (incl. first big quiz) → next is Day 4 (the Black-Scholes formula & d1/d2).
+**Next big quiz:** Day 6 (covers Days 4–6).
