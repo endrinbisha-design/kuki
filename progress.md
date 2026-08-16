@@ -8,6 +8,7 @@
 | 4 | 2026-08-07 | The Black-Scholes formula & d1/d2 | ___ / 5 | ___ / 5 | |
 | 5 | 2026-08-08 | Pricing puts & put-call parity | ___ / 5 | ___ / 5 | |
 | 6 | 2026-08-09 | Interpreting N(d1) & N(d2) | ___ / 5 | ___ / 10 (big) | |
+| 7 | 2026-08-10 | Delta — the hedge ratio | ___ / 5 | ___ / 5 | |
 
-**Current position:** Day 6 complete (incl. second big quiz) → next is Day 7 (Delta).
+**Current position:** Day 7 complete → next is Day 8 (Gamma).
 **Next big quiz:** Day 9 (covers Days 7–9).
