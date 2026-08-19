@@ -9,6 +9,8 @@
 | 5 | 2026-08-08 | Pricing puts & put-call parity | ___ / 5 | ___ / 5 | |
 | 6 | 2026-08-09 | Interpreting N(d1) & N(d2) | ___ / 5 | ___ / 10 (big) | |
 | 7 | 2026-08-10 | Delta — the hedge ratio | ___ / 5 | ___ / 5 | |
+| 8 | 2026-08-11 | Gamma — how delta moves | ___ / 5 | ___ / 5 | |
+| 9 | 2026-08-12 | Theta — time decay & the gamma trade-off | ___ / 5 | ___ / 10 (big) | |
 
-**Current position:** Day 7 complete → next is Day 8 (Gamma).
-**Next big quiz:** Day 9 (covers Days 7–9).
+**Current position:** Day 9 complete (incl. third big quiz) → next is Day 10 (Vega).
+**Next big quiz:** Day 12 (covers Days 10–12).
