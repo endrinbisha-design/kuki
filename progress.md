@@ -11,6 +11,7 @@
 | 7 | 2026-08-10 | Delta — the hedge ratio | ___ / 5 | ___ / 5 | |
 | 8 | 2026-08-11 | Gamma — how delta moves | ___ / 5 | ___ / 5 | |
 | 9 | 2026-08-12 | Theta — time decay & the gamma trade-off | ___ / 5 | ___ / 10 (big) | |
+| 10 | 2026-08-13 | Vega — sensitivity to volatility | ___ / 5 | ___ / 5 | |
 
-**Current position:** Day 9 complete (incl. third big quiz) → next is Day 10 (Vega).
+**Current position:** Day 10 complete → next is Day 11 (Rho & dividends).
 **Next big quiz:** Day 12 (covers Days 10–12).
