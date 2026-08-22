@@ -16,3 +16,5 @@
 
 **Current position:** Day 11 complete → next is Day 12 (implied vol & the vol smile).
 **Next big quiz:** Day 12 (covers Days 10–12).
+
+**Standalone quizzes:** `quizzes/options-comprehensive-quiz-1.md` — big review of Days 1–11 + options strategies (interview-style). Score: ___ / 32.

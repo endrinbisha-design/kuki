@@ -23,10 +23,18 @@ Every **3rd day** (Day 3, 6, 9, …) the quiz is a **bigger cumulative review** 
 ## Structure
 
 ```
-README.md                              <- you are here
-progress.md                            <- which day you're on, scores, notes
-curriculum/black-scholes-syllabus.md   <- the full BS learning path
-daily/day-01.md                        <- Day 1 content
-daily/day-02.md                        <- (generated next)
+README.md                                    <- you are here
+progress.md                                  <- which day you're on, scores, notes
+curriculum/black-scholes-syllabus.md         <- the full BS learning path
+daily/day-01.md                              <- Day 1 content
+daily/day-02.md                              <- (generated next)
 ...
+quizzes/options-comprehensive-quiz-1.md      <- standalone big review quizzes
 ```
+
+## Standalone review quizzes (`quizzes/`)
+
+Beyond the built-in every-3rd-day quizzes, `quizzes/` holds larger cross-cutting reviews.
+`options-comprehensive-quiz-1.md` covers Days 1–11 (fundamentals, pricing, all the Greeks
+including vega and rho/dividends) **plus interview-style questions on options strategies**
+(spreads, straddles, skew, and more) — with an answer key that explains each strategy.
