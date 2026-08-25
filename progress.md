@@ -13,8 +13,9 @@
 | 9 | 2026-08-12 | Theta — time decay & the gamma trade-off | ___ / 5 | ___ / 10 (big) | |
 | 10 | 2026-08-13 | Vega — sensitivity to volatility | ___ / 5 | ___ / 5 | |
 | 11 | 2026-08-14 | Rho & dividends | ___ / 5 | ___ / 5 | |
+| 12 | 2026-08-15 | Implied vol & the vol smile | ___ / 5 | ___ / 10 (big) | |
 
-**Current position:** Day 11 complete → next is Day 12 (implied vol & the vol smile).
-**Next big quiz:** Day 12 (covers Days 10–12).
+**Current position:** Day 12 complete (incl. fourth big quiz) → next is Day 13 (practical hedging).
+**Next big quiz:** Day 15 (final comprehensive).
 
 **Standalone quizzes:** `quizzes/options-comprehensive-quiz-1.md` — big review of Days 1–11 + options strategies (interview-style). Score: ___ / 32.
