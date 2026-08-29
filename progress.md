@@ -16,8 +16,9 @@
 | 12 | 2026-08-15 | Implied vol & the vol smile | ___ / 5 | ___ / 10 (big) | |
 | 13 | 2026-08-16 | Practical hedging & P&L attribution | ___ / 5 | ___ / 5 | |
 | 14 | 2026-08-17 | Limits of Black-Scholes | ___ / 5 | ___ / 5 | |
+| 15 | 2026-08-18 | Final comprehensive review | ___ / 5 | ___ / 15 (final) | |
 
-**Current position:** Day 14 complete → next is Day 15 (final comprehensive review + quiz).
-**Next big quiz:** Day 15 (final comprehensive).
+**Current position:** 🎓 Core 15-day course COMPLETE.
+**What's next (optional):** keep the daily prob/EV + brainteaser habit going; re-take the big quizzes cold; or ask for follow-on modules (exotics, vol surface in depth, market-making microstructure, rates, or live mock interviews).
 
 **Standalone quizzes:** `quizzes/options-comprehensive-quiz-1.md` — big review of Days 1–11 + options strategies (interview-style). Score: ___ / 32.
