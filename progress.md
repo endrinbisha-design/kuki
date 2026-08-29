@@ -15,8 +15,9 @@
 | 11 | 2026-08-14 | Rho & dividends | ___ / 5 | ___ / 5 | |
 | 12 | 2026-08-15 | Implied vol & the vol smile | ___ / 5 | ___ / 10 (big) | |
 | 13 | 2026-08-16 | Practical hedging & P&L attribution | ___ / 5 | ___ / 5 | |
+| 14 | 2026-08-17 | Limits of Black-Scholes | ___ / 5 | ___ / 5 | |
 
-**Current position:** Day 13 complete → next is Day 14 (limits of Black-Scholes).
+**Current position:** Day 14 complete → next is Day 15 (final comprehensive review + quiz).
 **Next big quiz:** Day 15 (final comprehensive).
 
 **Standalone quizzes:** `quizzes/options-comprehensive-quiz-1.md` — big review of Days 1–11 + options strategies (interview-style). Score: ___ / 32.
