@@ -14,6 +14,9 @@ Each day lives in `daily/day-NN.md` and contains:
 
 Every **3rd day** (Day 3, 6, 9, …) the quiz is a **bigger cumulative review** covering the prior lessons.
 
+**Phase 1 (Days 1–15):** the Black-Scholes core — ✅ complete.
+**Phase 2 (Day 16+):** two parallel tracks each day — **Track G (generalist sales & trading)** and **Track D (volatility trading / derivatives)** — see `curriculum/phase2-syllabus.md`. Daily prob/EV + brainteaser continue.
+
 ## How to use it
 
 - Open the day's file, work top-to-bottom, and **don't scroll to the Answers section** until you're done.

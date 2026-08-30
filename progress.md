@@ -19,6 +19,18 @@
 | 15 | 2026-08-18 | Final comprehensive review | ___ / 5 | ___ / 15 (final) | |
 
 **Current position:** 🎓 Core 15-day course COMPLETE.
-**What's next (optional):** keep the daily prob/EV + brainteaser habit going; re-take the big quizzes cold; or ask for follow-on modules (exotics, vol surface in depth, market-making microstructure, rates, or live mock interviews).
+
+---
+
+## Phase 2 — Two tracks (Track G: generalist S&T · Track D: vol trading)
+
+See `curriculum/phase2-syllabus.md`. Each day: prob/EV + brainteaser + a Track G lesson/quiz + a Track D lesson/quiz. Big quiz every 3rd day (Days 18, 21, 24…).
+
+| Day | Track G | Track D | Prob/EV | G quiz | D quiz |
+|----:|---------|---------|:-------:|:------:|:------:|
+| 16 | Market-making & microstructure | The vol surface in depth | ___ / 5 | ___ / 4 | ___ / 4 |
+
+**Current position:** Day 16 complete → next is Day 17 (Track G: the macro map · Track D: variance & vol swaps).
+**Next big quiz:** Day 18 (covers Days 16–18, both tracks).
 
 **Standalone quizzes:** `quizzes/options-comprehensive-quiz-1.md` — big review of Days 1–11 + options strategies (interview-style). Score: ___ / 32.
