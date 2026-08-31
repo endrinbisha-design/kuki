@@ -258,10 +258,13 @@ def main() -> int:
             ok = [b for b in board if MIN_P <= b["ask"] <= MAX_P]
             if tag == "sig":
                 trades["MARKET_FAVOURITE"].append(max(board, key=lambda x: x["ask"]))
-            if not ok:
-                continue
-
-            if tag == "sig":
+                # The price cap gates only the signal leg, which is the one that uses it.
+                # Applying it to the whole day also skipped the 17:00 leg: near settlement
+                # the board is often one bucket at 98c and the rest at 1c, so `ok` is
+                # empty and the CLI strategies were starved to 12 bets and 0 falling days
+                # -- against a standalone count of 26 and 9.
+                if not ok:
+                    continue
                 bmax, src, trace = banked(day, hour, obs, groups)
                 if bmax is None:
                     skipped["no_banked"] += 1

@@ -1,14 +1,14 @@
 {
  "MARKET_FAVOURITE": {
-  "bets": 28,
-  "hit_rate": 0.393,
-  "final": -33.66,
-  "mean_pct": -47.74,
+  "bets": 30,
+  "hit_rate": 0.733,
+  "final": 60.26,
+  "mean_pct": -13.25,
   "ci95": [
-   -71.4,
-   -22.5
+   -33.2,
+   5.8
   ],
-  "p_le_0": 1.0
+  "p_le_0": 0.903
  },
  "GROUP_1351": {
   "bets": 28,
@@ -33,12 +33,15 @@
   "p_le_0": 0.222
  },
  "PRELIM_ALL": {
-  "bets": 5,
-  "hit_rate": 0.4,
-  "final": 74.92,
-  "mean_pct": null,
-  "ci95": null,
-  "p_le_0": null
+  "bets": 12,
+  "hit_rate": 0.75,
+  "final": 76.05,
+  "mean_pct": -19.96,
+  "ci95": [
+   -48.9,
+   5.3
+  ],
+  "p_le_0": 0.942
  },
  "PRELIM_FALLING": {
   "bets": 0
