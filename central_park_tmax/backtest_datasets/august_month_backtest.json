@@ -33,20 +33,36 @@
   "p_le_0": 0.222
  },
  "PRELIM_ALL": {
-  "bets": 12,
-  "hit_rate": 0.75,
+  "bets": 26,
+  "hit_rate": 0.885,
   "final": 76.05,
-  "mean_pct": -19.96,
+  "mean_pct": -9.21,
   "ci95": [
-   -48.9,
-   5.3
+   -23.1,
+   2.1
   ],
-  "p_le_0": 0.942
+  "p_le_0": 0.936
  },
  "PRELIM_FALLING": {
-  "bets": 0
+  "bets": 9,
+  "hit_rate": 1.0,
+  "final": 100.0,
+  "mean_pct": 0.0,
+  "ci95": [
+   0.0,
+   0.0
+  ],
+  "p_le_0": 1.0
  },
  "PRELIM_FALLING_DRY": {
-  "bets": 0
+  "bets": 8,
+  "hit_rate": 1.0,
+  "final": 100.0,
+  "mean_pct": 0.0,
+  "ci95": [
+   0.0,
+   0.0
+  ],
+  "p_le_0": 1.0
  }
 }
