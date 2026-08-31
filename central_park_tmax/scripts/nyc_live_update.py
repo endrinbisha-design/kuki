@@ -35,10 +35,25 @@ from central_park_tmax.models.contract_calibration import (  # noqa: E402
     calibration_report, resolution_warning)
 from central_park_tmax.models.post_peak import (  # noqa: E402
     bucket_probability, settlement_distribution)
+from central_park_tmax.time_utils import to_local  # noqa: E402
 
 UA = {"User-Agent": "central_park_tmax/0.1 (research; endrinsberisha@gmail.com)"}
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
-OFFSET = -4  # EDT
+
+
+def offset_at(when_utc: dt.datetime) -> int:
+    """NY UTC offset in whole hours at ``when_utc``: -4 under EDT, -5 under EST.
+
+    Resolved per-timestamp rather than hardcoded. DST ends 2026-11-01, after which a
+    fixed -4 silently shifts every local timestamp by an hour -- which would corrupt the
+    six-hour-group day attribution (the bug class that took 58/68 to 204/204 to fix) and
+    relabel the 13:51 transmission as 12:51 local without anything appearing to fail.
+    """
+    return int(round(to_local(when_utc).utcoffset().total_seconds() / 3600))
+
+
+def tzname_at(when_utc: dt.datetime) -> str:
+    return to_local(when_utc).tzname() or "ET"
 
 # suffix -> (label, floor, cap); None bound = open-ended contract
 BUCKETS = {"T82": ("<=81", None, 81), "B82.5": ("82-83", 82, 83),
@@ -150,22 +165,22 @@ def main() -> int:
     args = ap.parse_args()
 
     now = dt.datetime.now(dt.timezone.utc)
-    local = now + dt.timedelta(hours=OFFSET)
+    local = to_local(now)
     day = local.date()
-    print(f"=== KNYC {local:%Y-%m-%d %H:%M} EDT ===")
+    print(f"=== KNYC {local:%Y-%m-%d %H:%M} {tzname_at(now)} ===")
 
     raw_metar = fetch_waiting_for_new_ob(now, args.wait)
     now = dt.datetime.now(dt.timezone.utc)
-    local = now + dt.timedelta(hours=OFFSET)
+    local = to_local(now)
     obs = parse_metar_block(raw_metar, now)
-    sm = settlement_max_so_far(obs, day, OFFSET)
+    sm = settlement_max_so_far(obs, day, offset_at(now))
     if sm.best_max_f is None:
         print("  observations UNAVAILABLE")
         return 1
     latest_ob = max((o.issued_utc for o in obs if o.temp_f is not None), default=None)
     if latest_ob is not None:
         age = (now - latest_ob).total_seconds() / 60
-        print(f"  latest ob  : {(latest_ob + dt.timedelta(hours=OFFSET)):%H:%M} EDT "
+        print(f"  latest ob  : {to_local(latest_ob):%H:%M} {tzname_at(latest_ob)} "
               f"({age:.0f} min old)")
     print(f"  max so far : {sm.best_max_f:.2f} F  via {sm.source}"
           f"  (hourly {sm.hourly_max_f}, in-day 6h group {sm.six_hour_max_f})")
