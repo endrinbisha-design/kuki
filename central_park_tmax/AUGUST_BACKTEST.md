@@ -4,9 +4,10 @@
 real Kalshi prices from settled-market candlesticks, $10 flat stake from a $100 bankroll,
 fills at the ask net of the taker fee.
 
-**Result: nothing here is tradeable.** The one leg that shows a profit is 78 % one trade.
-Details below, because two of the three interesting findings are about *why* the numbers
-come out the way they do.
+**Result: nothing here is demonstrated.** Five of six legs lose or return exactly zero. The
+sixth, `GROUP_1351_EDGE`, beats its break-even but at P = 0.25 against a correctly-priced
+market — promising, not proven, and far too small a sample to size a position on. It is the
+one thing in this project worth continuing to collect data on.
 
 ## Results
 
@@ -63,14 +64,39 @@ Decomposed:
 | best single trade (2026-08-14) | **+$22.26** |
 | **total excluding that one trade** | **+$6.24** on 9 bets |
 
-**78 % of the profit is one day.** Ex-that-trade the leg returns +0.7 % per bet, which is
-noise. The 95 % CI (−41 … +98) and P(≤0) = 0.22 say the same thing less vividly.
+78 % of the profit is one day. **But that framing is weak and was overstated when first
+written here.** This leg buys contracts at 9–69 ¢; a winner at 29 ¢ returns 2.4×, so
+concentrated P/L is *structurally expected* for a strategy of this shape, not evidence
+against it. Removing the best trade from a positive-skew strategy will always gut it.
 
-This also reproduces the failure mode recorded in `REAL_PRICE_BACKTEST.md`: apparent edge
-concentrated where our probabilities are least calibrated. Four of the ten picks are wide
-one-sided contracts (`≤79`, `≤84`, `≤89`) where `post_peak` assigns 0.75–0.99 and the market
-prices 0.09–0.69 — the tail region the isotonic recalibration was built to fix, and which
-this script does **not** apply. Treat the +28.5 % as miscalibration residue, not alpha.
+The test that actually applies is whether the hit rate beats what the prices paid imply.
+Treating each ask as the market's own probability and testing under the null that the
+market is correctly priced (Poisson-binomial over the ten trades):
+
+| | |
+|---|---|
+| market-implied expected wins | **4.49** |
+| observed wins | **6** |
+| **P(X ≥ 6 \| market correct)** | **0.246** |
+| break-even hit rate at prices paid | 46.8 % |
+| actual hit rate | 60 % |
+
+So: the leg beat its break-even, and there is a **one-in-four chance of doing at least this
+well by luck alone** if the market is perfectly priced. That is not significance. It is also
+not nothing, and "noise" overstates the case against it.
+
+**A second correction.** The first version of this document said "four of the ten picks are
+wide one-sided contracts … treat the +28.5 % as miscalibration residue." Both halves were
+wrong. Six of the ten are one-sided, not four; and the profit did **not** come from them:
+
+| | n | expected wins | actual | P/L |
+|---|---|---|---|---|
+| one-sided (`≤X`) | 6 | 2.62 | 3 | **+$7.18** |
+| `between` | 4 | 1.87 | 3 | **+$21.32** |
+
+The `between` contracts — the better-calibrated instrument — carried three quarters of the
+profit while the wide one-sided tails contributed little. The miscalibration story was a
+plausible prior applied without checking, and the data does not support it.
 
 ## 4. `GROUP_1351` is the worst leg and that is informative
 
@@ -115,3 +141,23 @@ would otherwise have been reported as a strategy (after the $4.2M candle-timesta
 * **August is EDT throughout.** Every local hour in this script is DST-specific; see
   `SEASONAL_TRANSITION.md`. The script is not valid across 2026-11-01 without the offset
   fix.
+
+## What would settle `GROUP_1351_EDGE`
+
+At P = 0.25 the leg is under-powered, not refuted. Three concrete next steps, cheapest
+first:
+
+1. **Apply `models/contract_calibration` and re-run.** It exists, it is fitted, and this
+   script does not use it. In `REAL_PRICE_BACKTEST.md` calibration removed the apparent
+   edge entirely (+8.3 % → +1.2 %). If it survives calibration here that is meaningful; if
+   it does not, the question is closed for the cost of one run.
+2. **Keep logging.** The leg fires ~10 times per 30 days. Reaching ~50 qualifying trades —
+   roughly the point where a true 60 % vs 47 % break-even edge separates from chance —
+   needs about **five more months**. The daily logging already underway produces this at no
+   extra cost.
+3. **Check the September–October out-of-sample.** Those months behave like August
+   (`SEASONAL_TRANSITION.md`), so they are a fair holdout; November is a regime change and
+   should be analysed separately.
+
+Do **not** size a position on ten trades. A 60 % hit rate on n = 10 has a 95 % interval of
+roughly 26–88 %, which comfortably contains the 46.8 % break-even.
