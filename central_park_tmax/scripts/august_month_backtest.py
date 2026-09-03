@@ -33,6 +33,7 @@ sizing.
 """
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import io
 import json
@@ -48,7 +49,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from central_park_tmax.models import post_peak  # noqa: E402
+from central_park_tmax.models import contract_calibration, post_peak  # noqa: E402
 
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
 SERIES, OFFSET = "KXHIGHNY", -4          # EDT; August only, see SEASONAL_TRANSITION.md
@@ -207,12 +208,22 @@ def boot(rets):
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--calibrated", action="store_true",
+                    help="pass the model PMF through models/contract_calibration before "
+                         "comparing it to the ask (see AUGUST_BACKTEST.md)")
+    args = ap.parse_args()
+    calibrated = args.calibrated
+    coverage: list[float] = []
     log = {}
     for line in open(ROOT / "track_record/call_log.jsonl"):
         if not line.strip():
             continue
         r = json.loads(line)
-        if r.get("city") in (None, "nyc") and r["target_date"] >= "2026-08-01" \
+        # Upper bound matters: the obs feed below is loaded for August only, so a
+        # September day gives the benchmark a bet the signal legs cannot take and the
+        # two stop being measured on the same day set.
+        if r.get("city") in (None, "nyc") and "2026-08-01" <= r["target_date"] <= "2026-08-31" \
                 and r.get("actual_high_f") is not None:
             log[dt.date.fromisoformat(r["target_date"])] = r
 
@@ -227,7 +238,7 @@ def main() -> int:
 
     trades = {k: [] for k in ("MARKET_FAVOURITE", "GROUP_1351", "GROUP_1351_EDGE",
                               "PRELIM_ALL", "PRELIM_FALLING", "PRELIM_FALLING_DRY")}
-    skipped = {"no_markets": 0, "no_prices": 0, "no_banked": 0}
+    skipped = {"no_markets": 0, "no_prices": 0, "no_banked": 0, "not_exhaustive": 0}
 
     for day in sorted(log):
         settle = log[day]["actual_high_f"]
@@ -274,9 +285,25 @@ def main() -> int:
                                                       observed_max_source=src)
                 pmf = o.integer_probabilities or {}
                 if pmf:
-                    for b in ok:
+                    # Probabilities are computed on the WHOLE board and calibrated there.
+                    # contract_calibration renormalises, so feeding it the price-filtered
+                    # subset would rescale a partial board to 1.0 and inflate every
+                    # probability on it -- the exact failure the module's docstring names.
+                    for b in board:
                         b["p"] = sum(v for k, v in pmf.items() if b["lo"] <= k <= b["hi"])
+                    coverage.append(sum(b["p"] for b in board))
+                    if calibrated:
+                        # Only a board that is already exhaustive can be renormalised.
+                        # A day missing candles for some buckets is skipped, not rescaled.
+                        if not contract_calibration.exhaustive([b["p"] for b in board]):
+                            skipped["not_exhaustive"] += 1
+                            continue
+                        cal = contract_calibration.calibrate_contract_set(
+                            "KNYC", {i: b["p"] for i, b in enumerate(board)})
+                        for i, b in enumerate(board):
+                            b["p"] = cal[i]
                     top = max(ok, key=lambda x: x["p"])
+                    top["day"] = day.isoformat()
                     trades["GROUP_1351"].append(top)
                     if top["p"] - top["ask"] >= EDGE:
                         trades["GROUP_1351_EDGE"].append(top)
@@ -300,7 +327,13 @@ def main() -> int:
                     if not wet:
                         trades["PRELIM_FALLING_DRY"].append(pick)
 
-    print(f"\nskipped: {skipped}\n")
+    tag_ = "CALIBRATED" if calibrated else "RAW"
+    print(f"\nskipped: {skipped}")
+    if coverage:
+        c = np.array(coverage)
+        print(f"board coverage (sum of raw model p over priced buckets): "
+              f"median {np.median(c):.3f}, min {c.min():.3f}, max {c.max():.3f}")
+    print(f"model probabilities: {tag_}\n")
     print(f"{'strategy':<20} {'bets':>5} {'hit':>6} {'final':>10} {'mean/bet':>10} "
           f"{'95% CI':>20} {'P(<=0)':>7}")
     print("-" * 82)
@@ -323,13 +356,21 @@ def main() -> int:
         ple = f"{b[3]:.2f}" if b else "n/a"
         print(f"{name:<20} {len(ts):>5} {wins/len(ts):>5.0%} {bank:>10,.2f} {mean:>10} "
               f"{ci:>20} {ple:>7}")
+        if name == "GROUP_1351_EDGE":
+            out["_edge_trades"] = [
+                {"day": t.get("day"), "lo": t["lo"], "hi": t["hi"],
+                 "ask": round(t["ask"], 3), "p": round(t["p"], 3), "won": t["won"],
+                 "pnl": round(STAKE * ((1.0 if t["won"] else 0.0)
+                                       / (t["ask"] + fee(t["ask"])) - 1.0), 2)}
+                for t in ts]
         out[name] = {"bets": len(ts), "hit_rate": round(wins / len(ts), 3),
                      "final": round(bank, 2),
                      "mean_pct": round(b[0], 2) if b else None,
                      "ci95": [round(b[1], 1), round(b[2], 1)] if b else None,
                      "p_le_0": round(b[3], 3) if b else None}
-    (ROOT / "backtest_datasets/august_month_backtest.json").write_text(json.dumps(out, indent=1))
-    print(f"\nwrote backtest_datasets/august_month_backtest.json")
+    name_ = "august_month_backtest_calibrated.json" if calibrated else "august_month_backtest.json"
+    (ROOT / "backtest_datasets" / name_).write_text(json.dumps(out, indent=1))
+    print(f"\nwrote backtest_datasets/{name_}")
     return 0
 
 
