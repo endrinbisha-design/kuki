@@ -37,7 +37,14 @@ It did not behave sensibly on the first two runs. See "Bugs caught" below.
 
 This is the month's best forecasting finding — the falling-trace rule — traded. On days
 where the `:51` trace declines into the 4 PM CLI validity cutoff, the preliminary CLI's max
-is reliable (4/4 in the log; 9/9 here on bucket outcome).
+is reliable (9/9 here on bucket outcome).
+
+**Corrected 2026-09-05.** The log's tally for this rule was wrong — a hand-maintained
+counter that only ever counted the days it looked at. A scripted re-derivation puts it at
+14 correct / 3 wrong over the 17 days carrying real preliminary-versus-final evidence.
+**This leg is unaffected**: the falling side is 8/8 and it is the only side this strategy
+trades. But that is also the finding's problem in miniature — the half of the rule that is
+reliable is the half that earns exactly zero, as the rest of this section shows.
 
 Every one of those nine bets fills at **ask = $1.00**:
 

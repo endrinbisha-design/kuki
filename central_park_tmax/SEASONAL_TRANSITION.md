@@ -78,9 +78,21 @@ an hour earlier and afternoon peaks drop ~20 points.
 
 The practical effect is favourable. The 4 PM blind spot that produced the three
 preliminary-CLI value errors (Aug 17, 25, 30) becomes rarer as peaks move earlier, so the
-preliminary should get *more* reliable. The falling-trace rule — non-falling into the
-cutoff → preliminary reads low (4/4); falling → correct (4/4) — should hold and cover a
-larger share of days.
+preliminary should get *more* reliable. The falling-trace rule should hold and cover a
+larger share of days — but note it is **not one rule, it is two, and only one of them
+works.** A scripted re-derivation on 2026-09-05 (see that day's log entry) put the record
+at 14 correct / 3 wrong across the 17 days where the log actually records a
+preliminary-versus-final comparison, replacing a hand-maintained "13 for 13" that had never
+computed its own denominator:
+
+| | n | record |
+|---|---|---|
+| falling → preliminary held | 8 | **8/8** |
+| non-falling → preliminary reads low | 9 | 6/9 (67 %) |
+
+The reliable half is the half that says *nothing is wrong*. The predictive half is the weak
+one. Twenty of the 36 logged days can never be adjudicated at all: the early entries cite
+only the preliminary, and the NWS CLI archive reaches back only about a week.
 
 The **75 % afternoon-window dominance** measured in August is the finding most exposed to
 the season, and it is doubly exposed: peaks move earlier *and* the window boundary itself
