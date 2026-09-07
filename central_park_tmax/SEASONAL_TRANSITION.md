@@ -94,6 +94,24 @@ The reliable half is the half that says *nothing is wrong*. The predictive half 
 one. Twenty of the 36 logged days can never be adjudicated at all: the early entries cite
 only the preliminary, and the NWS CLI archive reaches back only about a week.
 
+**Updated 2026-09-06** by the log's first advance prediction — recorded before either CLI
+product existed, and correct. The weak half is now 7/10, the falling half still 8/8, overall
+15/18. From here the rule should only be scored on calls made in advance.
+
+**And the mechanism is not the 4 PM cutoff.** Every earlier preliminary-low day was
+explained by the peak landing after the validity cutoff. On 2026-09-06 the peak was at
+**3:09 PM — inside the window — and the preliminary missed it anyway**, quoting 75 at
+2:53 PM against a final of 76. The operative constraint is that the preliminary is issued
+*before the 2 PM–8 PM six-hour group transmits*: that group carried 75.92 °F and went out at
+23:51 Z, hours after the 5:05 PM preliminary. Anything the continuous trace records after
+about 2 PM can be missed whether or not it falls before 4 PM, because the product that would
+reveal it does not yet exist.
+
+This matters for the autumn projection in §3 below. The favourable effect predicted there —
+earlier peaks clearing the 4 PM blind spot — is **weaker than stated**, because the blind
+spot is not anchored at 4 PM. It is anchored at the *2 PM group boundary*, which under EST
+moves to **1 PM**, i.e. earlier, partially offsetting the earlier peaks.
+
 The **75 % afternoon-window dominance** measured in August is the finding most exposed to
 the season, and it is doubly exposed: peaks move earlier *and* the window boundary itself
 moves from 2 PM to 1 PM. Do not carry the number forward; re-measure.
