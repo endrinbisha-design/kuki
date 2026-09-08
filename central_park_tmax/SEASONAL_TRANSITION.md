@@ -94,9 +94,24 @@ The reliable half is the half that says *nothing is wrong*. The predictive half 
 one. Twenty of the 36 logged days can never be adjudicated at all: the early entries cite
 only the preliminary, and the NWS CLI archive reaches back only about a week.
 
-**Updated 2026-09-06** by the log's first advance prediction — recorded before either CLI
-product existed, and correct. The weak half is now 7/10, the falling half still 8/8, overall
-15/18. From here the rule should only be scored on calls made in advance.
+**Updated 2026-09-07.** Two advance predictions have now been recorded before any CLI
+product existed: 09-06 correct, 09-07 wrong. The weak half is **7/11 (64 %)**, the falling
+half still 8/8, overall **15/19**. From here the rule should only be scored on calls made in
+advance.
+
+**A rival rule was tested and tied.** The mechanism below suggests a more direct test: do
+the 2 PM and 3 PM snapshots exceed the morning group? If not, nothing is hidden and the
+preliminary holds. Scripted over the same 19 evidence days:
+
+| rule | score |
+|---|---|
+| mechanism (afternoon snapshots vs morning group) | **15/19** |
+| trace shape (falling into the cutoff) | **15/19** |
+
+Identical. They disagree on four days and split them 2–2. The better-motivated rule is
+**not** the better-performing one at this sample size. What is useful is that they are
+complementary: **where they agree they are right 13/15 (87 %); where they disagree the
+outcome is a coin flip.** Agreement is the signal; disagreement is a reason to abstain.
 
 **And the mechanism is not the 4 PM cutoff.** Every earlier preliminary-low day was
 explained by the peak landing after the validity cutoff. On 2026-09-06 the peak was at
