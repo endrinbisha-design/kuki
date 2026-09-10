@@ -103,15 +103,16 @@ advance.
 the 2 PM and 3 PM snapshots exceed the morning group? If not, nothing is hidden and the
 preliminary holds. Scripted over the same 19 evidence days:
 
-| rule | score |
+| rule | score (21 evidence days, through 09-09) |
 |---|---|
-| mechanism (afternoon snapshots vs morning group) | **15/19** |
-| trace shape (falling into the cutoff) | **15/19** |
+| mechanism (afternoon snapshots vs morning group) | **17/21 (81 %)** |
+| trace shape (falling into the cutoff) | **16/21 (76 %)** |
+| **both rules agree** | **14/16 (88 %)**, abstaining on 5 |
 
-Identical. They disagree on four days and split them 2–2. The better-motivated rule is
-**not** the better-performing one at this sample size. What is useful is that they are
-complementary: **where they agree they are right 13/15 (87 %); where they disagree the
-outcome is a coin flip.** Agreement is the signal; disagreement is a reason to abstain.
+The mechanism is one day ahead — on n = 21 that is a single day and not grounds for
+retiring the other. **Agreement remains the only configuration performing meaningfully
+above either rule alone**, and disagreement is a reason to abstain rather than to pick.
+09-08 was the first call made under this criterion and it was correct.
 
 **And the mechanism is not the 4 PM cutoff.** Every earlier preliminary-low day was
 explained by the peak landing after the validity cutoff. On 2026-09-06 the peak was at
