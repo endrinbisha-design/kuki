@@ -103,16 +103,25 @@ advance.
 the 2 PM and 3 PM snapshots exceed the morning group? If not, nothing is hidden and the
 preliminary holds. Scripted over the same 19 evidence days:
 
-| rule | score (21 evidence days, through 09-09) |
+| rule | score (22 evidence days, through 09-10) |
 |---|---|
-| mechanism (afternoon snapshots vs morning group) | **17/21 (81 %)** |
-| trace shape (falling into the cutoff) | **16/21 (76 %)** |
-| **both rules agree** | **14/16 (88 %)**, abstaining on 5 |
+| mechanism (afternoon snapshots vs morning group) | 17/22 (77 %) |
+| trace shape (falling into the cutoff) | 16/22 (73 %) |
+| both rules agree | **14/17 (82 %)**, abstaining on 5 |
 
-The mechanism is one day ahead — on n = 21 that is a single day and not grounds for
-retiring the other. **Agreement remains the only configuration performing meaningfully
-above either rule alone**, and disagreement is a reason to abstain rather than to pick.
-09-08 was the first call made under this criterion and it was correct.
+09-08 was the first call under this criterion and was correct; **09-10 was the second and
+was wrong**, taking the band from 88 % to 82 %. One miss moving the figure six points is
+the measure of how little seventeen days supports, and is a caution against the weight put
+on the 88 % when it was first computed.
+
+**The mechanism below does not survive 09-10.** It assumes the preliminary cannot see the
+afternoon maximum because the 2 PM–8 PM group has not transmitted at issuance. On 09-10 the
+afternoon group *was* higher (84.02 vs 82.94), the premise held, and the preliminary
+reported the correct 84 regardless — because the CLI reads the continuous trace directly
+and does not wait for the group. The earlier story (maxima after the 4 PM cutoff) fails on
+09-06, where a 3:09 PM peak was missed. **Two mid-afternoon peaks, opposite outcomes: there
+is currently no mechanism that explains both days**, and the rules below should be read as
+empirical regularities of unknown cause, not as consequences of a understood process.
 
 **And the mechanism is not the 4 PM cutoff.** Every earlier preliminary-low day was
 explained by the peak landing after the validity cutoff. On 2026-09-06 the peak was at
