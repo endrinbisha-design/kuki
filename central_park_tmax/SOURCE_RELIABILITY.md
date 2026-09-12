@@ -62,6 +62,35 @@ in whole-degree buckets, a 63/37 split across two adjacent integers is directly 
 when both integers sit inside one bucket the bucket is ~certain, and when they straddle a
 boundary the split *is* the price.
 
+## "Directly usable" needs heavy qualification
+
+The claim above — that when both integers fall in one bucket the bucket is near-certain —
+is true and also much less useful than it sounds. Checked against the real KXHIGHNY bucket
+layout (`<=81`, `82-83`, `84-85`, `86-87`, `88-89`, `>=90`):
+
+| | days | result |
+|---|---|---|
+| both integers in one bucket | 15/19 (79 %) | bucket correct **15/15** |
+| …of which the wide open-ended `<=81` | **11** | certainty is nearly free |
+| …genuine 2-wide bucket | **4** | 4/4 |
+| integers straddle a boundary | 4/19 (21 %) | 63 % side won 2 of 4 |
+
+**Eleven of the fifteen are the open-ended `<=81` bucket.** On those days the preliminary
+was 80 or below, so the bucket was near-certain from the banked max alone — no distribution
+needed, and a market with the max already banked under 81 will be quoting that bucket near
+99 ¢. That is `EDGE_DECAY.md` territory, and the same wall `PRELIM_FALLING` hit when all
+nine of its fills came in at exactly $1.00.
+
+Strip those out and the split makes a *genuine* narrow bucket near-certain on **4 days in
+19**, all four correct. Four days is not a strategy. On the 4 straddling days the 63 % side
+won twice, which is consistent with 63/37 and also consistent with almost anything at
+n = 4.
+
+So the honest version: the two-point distribution is a real and clean property of the
+preliminary, and it is a better *description* of what is knowable at 4:40 PM than any of
+the rules. Whether it is *tradeable* is unresolved and the base rates argue against it —
+the cases where it delivers certainty are mostly cases that were already certain.
+
 ## Honest limits
 
 * **n = 19 for the preliminary**, not 42. Twenty-three of the logged days never recorded a
