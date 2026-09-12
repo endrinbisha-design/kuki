@@ -114,6 +114,13 @@ was wrong**, taking the band from 88 % to 82 %. One miss moving the figure six p
 the measure of how little seventeen days supports, and is a caution against the weight put
 on the 88 % when it was first computed.
 
+**See `SOURCE_RELIABILITY.md` before using either rule.** Measured over all 42 logged
+days, the preliminary's error is a two-point distribution — +0 °F on 63 % of days and
+exactly +1 °F on 37 %, with zero mass anywhere else. Both rules below are attempts to
+predict *which* of those two outcomes lands, and all of them score worse than the
+distribution itself, so using a rule in place of the split discards information. The rules
+are retained as a record of what was tried, not as the recommended method.
+
 **The mechanism below does not survive 09-10.** It assumes the preliminary cannot see the
 afternoon maximum because the 2 PM–8 PM group has not transmitted at issuance. On 09-10 the
 afternoon group *was* higher (84.02 vs 82.94), the premise held, and the preliminary
