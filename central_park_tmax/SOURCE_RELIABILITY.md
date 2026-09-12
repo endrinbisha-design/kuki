@@ -58,9 +58,9 @@ two rules (trace shape, 70 %; the mechanism, 78 %) that try to predict *which* o
 outcomes occurs, and an agreement band at 82 % on 17 days. All three are attempts to
 collapse a distribution that is already sharp into a point call — and all three are worse
 than 100 %, so collapsing it loses information rather than adding any. For a market quoted
-in whole-degree buckets, a 63/37 split across two adjacent integers is directly usable:
-when both integers sit inside one bucket the bucket is ~certain, and when they straddle a
-boundary the split *is* the price.
+in whole-degree buckets the split has an obvious reading — when both integers sit inside one
+bucket the bucket is ~certain, and when they straddle a boundary the split *is* the price —
+but see the next section before believing that is worth anything. It mostly is not.
 
 ## "Directly usable" needs heavy qualification
 
