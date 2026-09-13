@@ -1,8 +1,10 @@
 # Which source actually tells you the settlement, and when
 
-Measured over the 42 consecutive logged KNYC days, 2026-08-01 → 09-11
-(`track_record/call_log.jsonl`). Every value re-derived from the METAR archive by script;
-preliminary values come from the log entries that recorded them.
+Measured over the 43 consecutive logged KNYC days, 2026-08-01 → 09-12
+(`track_record/call_log.jsonl`). **Every number below is produced by
+`scripts/source_reliability.py`** — re-derived from the METAR archive on each run, never
+incremented by hand. Re-run it after adding a day and paste the output; do not edit the
+figures in place.
 
 This document exists because on 09-11 I claimed the preliminary CLI had beaten the
 six-hour group and that "the ordering is reversed." **Tested across all 42 days, that is
@@ -12,16 +14,16 @@ wrong.** The groups are settlement-grade and the preliminary is not.
 
 | source | available | matches settlement |
 |---|---|---|
-| morning group (8 AM–2 PM) | 1:51 PM | 18/42 — **43 %** |
-| preliminary CLI | ~4:31–5:05 PM | 12/19 — **63 %** |
-| afternoon group (2 PM–8 PM) | 7:51 PM | 35/42 — **83 %** |
-| **max of both groups** | **7:51 PM** | **41/42 — 98 %** |
+| morning group (8 AM–2 PM) | 1:51 PM | 19/43 — **44 %** |
+| preliminary CLI | ~4:31–5:05 PM | 13/20 — **65 %** |
+| afternoon group (2 PM–8 PM) | 7:51 PM | 36/43 — **84 %** |
+| **max of both groups** | **7:51 PM** | **42/43 — 98 %** |
 
 Read the timing column before the accuracy column; these are not competing at the same
 hour.
 
-* **At 4:40 PM the preliminary is the best thing available** — 63 % against the morning
-  group's 43 %. That much of the 09-11 observation survives.
+* **At 4:40 PM the preliminary is the best thing available** — 65 % against the morning
+  group's 44 %. That much of the 09-11 observation survives.
 * **Waiting until 7:51 PM beats it decisively.** Max-of-both-groups is 98 %. The claim that
   the preliminary supersedes the group was generalised from a single favourable day and
   does not hold.
@@ -37,25 +39,28 @@ This is the useful finding, and it was sitting in the data the whole time:
 
 | settled − preliminary | days | share |
 |---|---|---|
-| **+0 °F** | 12 | **63 %** |
-| **+1 °F** | 7 | **37 %** |
+| **+0 °F** | 13 | **65 %** |
+| **+1 °F** | 7 | **35 %** |
 | anything else | **0** | **0 %** |
 
 Never negative. Never +2. The seven misses are 08-03, 08-17, 08-25, 08-30, 09-01, 09-03
 and 09-06 — **every one low by exactly one degree.**
 
+Note the split is **65/35 as of 09-12**, not the 63/37 first computed on 09-11. It will
+keep moving; quote it from the script, not from memory.
+
 So the preliminary does not give a point estimate with unknown error; it gives a **tight
 two-outcome distribution over adjacent integers**, known at ~4:40 PM:
 
 ```
-P(settle = preliminary)     ≈ 0.63
-P(settle = preliminary + 1) ≈ 0.37
+P(settle = preliminary)     ≈ 0.65
+P(settle = preliminary + 1) ≈ 0.35
 P(anything else)            ≈ 0
 ```
 
 **This is worth more than the rules built on top of it.** `SEASONAL_TRANSITION.md` documents
-two rules (trace shape, 70 %; the mechanism, 78 %) that try to predict *which* of these two
-outcomes occurs, and an agreement band at 82 % on 17 days. All three are attempts to
+two rules (trace shape, 71 %; the mechanism, 79 %) that try to predict *which* of these two
+outcomes occurs, and an agreement band at 83 % on 18 days. All three are attempts to
 collapse a distribution that is already sharp into a point call — and all three are worse
 than 100 %, so collapsing it loses information rather than adding any. For a market quoted
 in whole-degree buckets the split has an obvious reading — when both integers sit inside one
@@ -70,19 +75,19 @@ layout (`<=81`, `82-83`, `84-85`, `86-87`, `88-89`, `>=90`):
 
 | | days | result |
 |---|---|---|
-| both integers in one bucket | 15/19 (79 %) | bucket correct **15/15** |
-| …of which the wide open-ended `<=81` | **11** | certainty is nearly free |
+| both integers in one bucket | 16/20 (80 %) | bucket correct **16/16** |
+| …of which the wide open-ended `<=81` | **12** | certainty is nearly free |
 | …genuine 2-wide bucket | **4** | 4/4 |
-| integers straddle a boundary | 4/19 (21 %) | 63 % side won 2 of 4 |
+| integers straddle a boundary | 4/20 (20 %) | 65 % side won 2 of 4 |
 
-**Eleven of the fifteen are the open-ended `<=81` bucket.** On those days the preliminary
+**Twelve of the sixteen are the open-ended `<=81` bucket.** On those days the preliminary
 was 80 or below, so the bucket was near-certain from the banked max alone — no distribution
 needed, and a market with the max already banked under 81 will be quoting that bucket near
 99 ¢. That is `EDGE_DECAY.md` territory, and the same wall `PRELIM_FALLING` hit when all
 nine of its fills came in at exactly $1.00.
 
 Strip those out and the split makes a *genuine* narrow bucket near-certain on **4 days in
-19**, all four correct. Four days is not a strategy. On the 4 straddling days the 63 % side
+20**, all four correct. Four days is not a strategy. On the 4 straddling days the 63 % side
 won twice, which is consistent with 63/37 and also consistent with almost anything at
 n = 4.
 
@@ -93,10 +98,10 @@ the cases where it delivers certainty are mostly cases that were already certain
 
 ## Honest limits
 
-* **n = 19 for the preliminary**, not 42. Twenty-three of the logged days never recorded a
+* **n = 20 for the preliminary**, not 43. Twenty-three of the logged days never recorded a
   preliminary-versus-final comparison, and the NWS CLI archive retains only about a week,
-  so that evidence is permanently gone. The 63/37 split rests on nineteen days.
-* A two-point distribution with zero mass elsewhere on n = 19 is exactly the kind of clean
+  so that evidence is permanently gone. The split rests on twenty days.
+* A two-point distribution with zero mass elsewhere on n = 20 is exactly the kind of clean
   result that gets ragged with more data. The direction (never high) is better supported
   than the magnitudes.
 * One station, one warm season. Nothing checked at KPHX or KLAS.
