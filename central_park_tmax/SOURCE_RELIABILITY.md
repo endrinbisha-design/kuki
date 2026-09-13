@@ -7,7 +7,7 @@ incremented by hand. Re-run it after adding a day and paste the output; do not e
 figures in place.
 
 This document exists because on 09-11 I claimed the preliminary CLI had beaten the
-six-hour group and that "the ordering is reversed." **Tested across all 42 days, that is
+six-hour group and that "the ordering is reversed." **Tested across all 43 days, that is
 wrong.** The groups are settlement-grade and the preliminary is not.
 
 ## The scoreboard
@@ -29,7 +29,7 @@ hour.
   does not hold.
 * The one failure of max-of-both-groups is **2026-08-27**, the sensor-contamination day
   where a 9-minute spike during heavy rain entered the group and the CLI's QC rejected it
-  (group 81, settled 77). That remains the only day in 42 where a group was wrong and the
+  (group 81, settled 77). That remains the only day in 43 where a group was wrong and the
   CLI right — so it is one exception, not a pattern, but it is the reason the 98 % is not
   100 %.
 
@@ -87,8 +87,8 @@ needed, and a market with the max already banked under 81 will be quoting that b
 nine of its fills came in at exactly $1.00.
 
 Strip those out and the split makes a *genuine* narrow bucket near-certain on **4 days in
-20**, all four correct. Four days is not a strategy. On the 4 straddling days the 63 % side
-won twice, which is consistent with 63/37 and also consistent with almost anything at
+20**, all four correct. Four days is not a strategy. On the 4 straddling days the 65 % side
+won twice, which is consistent with 65/35 and also consistent with almost anything at
 n = 4.
 
 So the honest version: the two-point distribution is a real and clean property of the

@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """Recompute every tally in ``SOURCE_RELIABILITY.md`` from primary data.
 
-This script exists because hand-maintained counters have been wrong three times in this
+This script exists because hand-maintained counters have been wrong four times in this
 project: the timestamp anomaly's "six for six" that was really 6/15, the backtest's
-impossible 39 % benchmark, and the falling-trace rule's "13 for 13" that a scripted audit
-put at 14 correct / 3 wrong. In every case the error was the same -- a number incremented
-day by day, never re-derived, and never given a denominator.
+impossible 39 % benchmark, the falling-trace rule's "13 for 13" that a scripted audit put
+at 14 correct / 3 wrong, and -- caught by the first run of this very script -- a
+preliminary count of 19 that should have been 20. In every case the error was the same: a
+number never re-derived, or re-derived from something that was not primary data.
+
+That fourth one is the reason for the ``prelim_high_f`` field. The first version recovered
+the preliminary by regex from the prose in ``actual_high_source``, one phrasing did not
+match, and the day vanished silently -- the same failure as a hand-kept tally, just one
+level down and wearing a script's authority. Parse structured fields, not your own writing.
 
 So nothing here is carried forward. Groups and snapshots are re-parsed from the METAR
-archive on each run; preliminary values are re-extracted from the log entries that recorded
-them; settlements come from the log. Run it after adding a day and paste the output.
+archive on each run; preliminary values come from ``prelim_high_f``; settlements come from
+the log. Run it after adding a day and paste the output.
 
     python scripts/source_reliability.py
 """
