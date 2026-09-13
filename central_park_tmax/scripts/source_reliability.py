@@ -25,7 +25,6 @@ import datetime as dt
 import io
 import json
 import re
-import sys
 import urllib.request
 from pathlib import Path
 
@@ -35,7 +34,7 @@ ROOT = Path(__file__).resolve().parents[1]
 UA = {"User-Agent": "central_park_tmax/0.1 (research; endrinsberisha@gmail.com)"}
 START = dt.date(2026, 8, 1)
 SIX = re.compile(r"(?:^|\s)1([01])(\d{3})(?:\s|$)")
-# The preliminary value as recorded in actual_high_source, across the phrasings used.
+# Fallback only: the preliminary as phrased in actual_high_source on pre-09-13 entries.
 PRE = re.compile(r"prelim\w*[^.]*?(\d{2,3})\s*at\s*\d|said\s+(\d{2,3})\s+at|prelim_CLI_(\d{2,3})_at",
                  re.I)
 
@@ -92,7 +91,7 @@ def main() -> int:
     log = {r["target_date"]: r for r in rows if r.get("city") in (None, "nyc")}
     days = sorted(d for d in log
                   if d >= START.isoformat() and log[d].get("actual_high_f") is not None)
-    snap, grp = load_metar(START, dt.date.fromisoformat(days[-1]) + dt.timedelta(days=2))
+    _, grp = load_metar(START, dt.date.fromisoformat(days[-1]) + dt.timedelta(days=2))
 
     n = mo = af = best = pre_n = pre_ok = 0
     err: dict[int, int] = {}
@@ -143,7 +142,9 @@ def main() -> int:
     print(f"  both integers in one bucket {same_bucket:>3}/{pre_n}   bucket correct {same_ok}/{same_bucket}")
     print(f"    ...of which open-ended    {wide:>3}   (certainty nearly free -- see EDGE_DECAY.md)")
     print(f"    ...genuine 2-wide bucket  {same_bucket-wide:>3}")
-    print(f"  integers straddle a boundary {strad:>3}/{pre_n}   63% side won {strad_63}/{strad}")
+    hold_pct = f"{pre_ok/pre_n:.0%}" if pre_n else "n/a"
+    print(f"  integers straddle a boundary {strad:>3}/{pre_n}   "
+          f"{hold_pct} side won {strad_63}/{strad}")
     return 0
 
 
