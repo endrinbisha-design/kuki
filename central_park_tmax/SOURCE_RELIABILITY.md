@@ -1,35 +1,35 @@
 # Which source actually tells you the settlement, and when
 
-Measured over the 43 consecutive logged KNYC days, 2026-08-01 → 09-12
+Measured over the 44 consecutive logged KNYC days, 2026-08-01 → 09-13
 (`track_record/call_log.jsonl`). **Every number below is produced by
 `scripts/source_reliability.py`** — re-derived from the METAR archive on each run, never
 incremented by hand. Re-run it after adding a day and paste the output; do not edit the
 figures in place.
 
 This document exists because on 09-11 I claimed the preliminary CLI had beaten the
-six-hour group and that "the ordering is reversed." **Tested across all 43 days, that is
+six-hour group and that "the ordering is reversed." **Tested across all 44 days, that is
 wrong.** The groups are settlement-grade and the preliminary is not.
 
 ## The scoreboard
 
 | source | available | matches settlement |
 |---|---|---|
-| morning group (8 AM–2 PM) | 1:51 PM | 19/43 — **44 %** |
-| preliminary CLI | ~4:31–5:05 PM | 13/20 — **65 %** |
-| afternoon group (2 PM–8 PM) | 7:51 PM | 36/43 — **84 %** |
-| **max of both groups** | **7:51 PM** | **42/43 — 98 %** |
+| morning group (8 AM–2 PM) | 1:51 PM | 19/44 — **43 %** |
+| preliminary CLI | ~4:31–5:05 PM | 13/21 — **62 %** |
+| afternoon group (2 PM–8 PM) | 7:51 PM | 37/44 — **84 %** |
+| **max of both groups** | **7:51 PM** | **43/44 — 98 %** |
 
 Read the timing column before the accuracy column; these are not competing at the same
 hour.
 
-* **At 4:40 PM the preliminary is the best thing available** — 65 % against the morning
-  group's 44 %. That much of the 09-11 observation survives.
+* **At 4:40 PM the preliminary is the best thing available** — 62 % against the morning
+  group's 43 %. That much of the 09-11 observation survives.
 * **Waiting until 7:51 PM beats it decisively.** Max-of-both-groups is 98 %. The claim that
   the preliminary supersedes the group was generalised from a single favourable day and
   does not hold.
 * The one failure of max-of-both-groups is **2026-08-27**, the sensor-contamination day
   where a 9-minute spike during heavy rain entered the group and the CLI's QC rejected it
-  (group 81, settled 77). That remains the only day in 43 where a group was wrong and the
+  (group 81, settled 77). That remains the only day in 44 where a group was wrong and the
   CLI right — so it is one exception, not a pattern, but it is the reason the 98 % is not
   100 %.
 
@@ -39,28 +39,29 @@ This is the useful finding, and it was sitting in the data the whole time:
 
 | settled − preliminary | days | share |
 |---|---|---|
-| **+0 °F** | 13 | **65 %** |
-| **+1 °F** | 7 | **35 %** |
+| **+0 °F** | 13 | **62 %** |
+| **+1 °F** | 8 | **38 %** |
 | anything else | **0** | **0 %** |
 
-Never negative. Never +2. The seven misses are 08-03, 08-17, 08-25, 08-30, 09-01, 09-03
-and 09-06 — **every one low by exactly one degree.**
+Never negative. Never +2. The eight misses are 08-03, 08-17, 08-25, 08-30, 09-01, 09-03,
+09-06 and 09-13 — **every one low by exactly one degree.**
 
-Note the split is **65/35 as of 09-12**, not the 63/37 first computed on 09-11. It will
-keep moving; quote it from the script, not from memory.
+The split has read 63/37 (09-11), 65/35 (09-12) and **62/38 (09-13)** on successive days.
+Same finding, moving numbers; quote it from the script, never from memory. Zero mass
+outside the two points is the part that has held across all three.
 
 So the preliminary does not give a point estimate with unknown error; it gives a **tight
 two-outcome distribution over adjacent integers**, known at ~4:40 PM:
 
 ```
-P(settle = preliminary)     ≈ 0.65
-P(settle = preliminary + 1) ≈ 0.35
+P(settle = preliminary)     ≈ 0.62
+P(settle = preliminary + 1) ≈ 0.38
 P(anything else)            ≈ 0
 ```
 
 **This is worth more than the rules built on top of it.** `SEASONAL_TRANSITION.md` documents
-two rules (trace shape, 71 %; the mechanism, 79 %) that try to predict *which* of these two
-outcomes occurs, and an agreement band at 83 % on 18 days. All three are attempts to
+two rules (trace shape, 72 %; the mechanism, 80 %) that try to predict *which* of these two
+outcomes occurs, and an agreement band at 84 % on 19 days. All three are attempts to
 collapse a distribution that is already sharp into a point call — and all three are worse
 than 100 %, so collapsing it loses information rather than adding any. For a market quoted
 in whole-degree buckets the split has an obvious reading — when both integers sit inside one
@@ -75,20 +76,20 @@ layout (`<=81`, `82-83`, `84-85`, `86-87`, `88-89`, `>=90`):
 
 | | days | result |
 |---|---|---|
-| both integers in one bucket | 16/20 (80 %) | bucket correct **16/16** |
-| …of which the wide open-ended `<=81` | **12** | certainty is nearly free |
+| both integers in one bucket | 17/21 (81 %) | bucket correct **17/17** |
+| …of which the wide open-ended `<=81` | **13** | certainty is nearly free |
 | …genuine 2-wide bucket | **4** | 4/4 |
-| integers straddle a boundary | 4/20 (20 %) | 65 % side won 2 of 4 |
+| integers straddle a boundary | 4/21 (19 %) | 62 % side won 2 of 4 |
 
-**Twelve of the sixteen are the open-ended `<=81` bucket.** On those days the preliminary
+**Thirteen of the seventeen are the open-ended `<=81` bucket.** On those days the preliminary
 was 80 or below, so the bucket was near-certain from the banked max alone — no distribution
 needed, and a market with the max already banked under 81 will be quoting that bucket near
 99 ¢. That is `EDGE_DECAY.md` territory, and the same wall `PRELIM_FALLING` hit when all
 nine of its fills came in at exactly $1.00.
 
 Strip those out and the split makes a *genuine* narrow bucket near-certain on **4 days in
-20**, all four correct. Four days is not a strategy. On the 4 straddling days the 65 % side
-won twice, which is consistent with 65/35 and also consistent with almost anything at
+21**, all four correct. Four days is not a strategy. On the 4 straddling days the majority
+side won twice, which is consistent with 62/38 and also consistent with almost anything at
 n = 4.
 
 So the honest version: the two-point distribution is a real and clean property of the
@@ -98,10 +99,10 @@ the cases where it delivers certainty are mostly cases that were already certain
 
 ## Honest limits
 
-* **n = 20 for the preliminary**, not 43. Twenty-three of the logged days never recorded a
+* **n = 21 for the preliminary**, not 44. Twenty-three of the logged days never recorded a
   preliminary-versus-final comparison, and the NWS CLI archive retains only about a week,
-  so that evidence is permanently gone. The split rests on twenty days.
-* A two-point distribution with zero mass elsewhere on n = 20 is exactly the kind of clean
+  so that evidence is permanently gone. The split rests on twenty-one days.
+* A two-point distribution with zero mass elsewhere on n = 21 is exactly the kind of clean
   result that gets ragged with more data. The direction (never high) is better supported
   than the magnitudes.
 * One station, one warm season. Nothing checked at KPHX or KLAS.
