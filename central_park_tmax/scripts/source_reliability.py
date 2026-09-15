@@ -96,6 +96,7 @@ def main() -> int:
     n = mo = af = best = pre_n = pre_ok = 0
     err: dict[int, int] = {}
     same_bucket = same_ok = wide = strad = strad_63 = 0
+    daytime_fail: list[str] = []
     for ds in days:
         d = dt.date.fromisoformat(ds)
         if d not in grp:
@@ -108,7 +109,14 @@ def main() -> int:
             mo += half_up(m) == act
         if a is not None:
             af += half_up(a) == act
-        best += half_up(max(v for v in (m or -99, a or -99))) == act
+        # ALL same-day groups, not just morning+afternoon. The first version used only
+        # those two and scored 98%; 09-14 broke it -- an overnight-max day settling at 75
+        # where morning 73.04 and afternoon 73.94 both round to 74, while the 2 AM-8 AM
+        # group reads 75.02 and was simply never consulted. The 98% was under-specified,
+        # not wrong: two of the three available same-day groups were being fed in.
+        best += half_up(max(G.values())) == act
+        if half_up(max(v for v in (m or -99, a or -99))) != act:
+            daytime_fail.append(ds)
         # Prefer the structured field. The regex below is a fallback for older entries
         # and it silently missed 09-12, whose phrasing differed -- which is why the
         # value is now recorded as a field instead of being re-parsed out of prose.
@@ -134,7 +142,8 @@ def main() -> int:
     print(f"  morning group   (1:51 PM)  {mo:>3}/{n}  = {mo/n:.0%}")
     print(f"  preliminary CLI (~4:40 PM) {pre_ok:>3}/{pre_n}  = {pre_ok/pre_n:.0%}")
     print(f"  afternoon group (7:51 PM)  {af:>3}/{n}  = {af/n:.0%}")
-    print(f"  max of both groups         {best:>3}/{n}  = {best/n:.0%}")
+    print(f"  max of ALL same-day groups {best:>3}/{n}  = {best/n:.0%}")
+    print(f"  (daytime groups only would miss {len(daytime_fail)}: {', '.join(daytime_fail)})")
     print("\nPRELIMINARY ERROR (settled - preliminary)")
     for k in sorted(err):
         print(f"  {k:+d} F : {err[k]:>3} days  ({err[k]/pre_n:.0%})")
