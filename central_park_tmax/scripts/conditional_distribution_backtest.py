@@ -22,12 +22,14 @@ log-loss and 2-degree-bucket accuracy, expanding yearly folds 2019-2025.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 OUT = ROOT / "backtest_datasets"
 CACHE = OUT / "mos_raw"
 CITIES = {"nyc": "KNYC", "phoenix": "KPHX", "vegas": "KLAS"}
@@ -122,11 +124,17 @@ def emos_conditional(train: pd.DataFrame, test: pd.DataFrame) -> tuple[float, fl
     """EMOS-style: Gaussian with GBM-regressed conditional mean AND sigma (Gneiting 2005)."""
     from sklearn.ensemble import HistGradientBoostingRegressor
     from scipy.stats import norm
-    m = HistGradientBoostingRegressor(max_depth=3, max_iter=200, learning_rate=0.06,
-                                      random_state=42).fit(train[FEATS], train["err"])
-    resid = train["err"] - m.predict(train[FEATS])
+    from central_park_tmax.evaluation.crossfit import chronological_residuals
+    template = HistGradientBoostingRegressor(max_depth=3, max_iter=200, learning_rate=0.06,
+                                             early_stopping=False, random_state=42)
+    crossfit = chronological_residuals(template, train[FEATS], train["err"], train.index)
+    eligible = crossfit.residual.notna().to_numpy()
+    if eligible.sum() < 100:
+        raise ValueError("Insufficient chronological residuals for scale estimation.")
+    m = template.fit(train[FEATS], train["err"])
     s = HistGradientBoostingRegressor(max_depth=3, max_iter=150, learning_rate=0.06,
-                                      random_state=42).fit(train[FEATS], resid.abs())
+                                      early_stopping=False, random_state=42).fit(
+        train[FEATS].iloc[np.flatnonzero(eligible)], crossfit.residual[eligible].abs())
     mu_err = m.predict(test[FEATS])
     sig = np.maximum(s.predict(test[FEATS]) * np.sqrt(np.pi / 2), 0.8)
     losses, hits = [], []

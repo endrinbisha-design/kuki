@@ -1,0 +1,15 @@
+[Unit]
+Description=Central Park paper research cycle (no live orders)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/kuki/central_park_tmax
+ExecStart=%h/kuki/central_park_tmax/.venv/bin/python scripts/run_paper_cycle.py
+Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+TimeoutStartSec=180
+UMask=0077
+NoNewPrivileges=true
+

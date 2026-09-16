@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Central Park paper research once per minute
+
+[Timer]
+OnBootSec=30
+OnUnitInactiveSec=60
+AccuracySec=1
+Unit=central-park-paper.service
+
+[Install]
+WantedBy=timers.target

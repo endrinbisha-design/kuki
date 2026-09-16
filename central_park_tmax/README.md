@@ -33,6 +33,10 @@ automatically promoted to the live prediction path.
 standard-time day alignment, market-state and report/market comparisons, depth-aware
 quote diagnostics, and a ranked plan for forward alpha research.
 
+**Paper automation and data:** [`DATA_AND_AUTOMATION.md`](DATA_AND_AUTOMATION.md)
+describes the persistent paper ledger, one-cycle runner and systemd timer, four strategy
+stress scenarios, newly retrieved minute data, and the remaining live-data/deployment gaps.
+
 ## 1. Scientific motivation
 
 Numerical weather prediction (NWP) models have systematic, location-specific errors. Central

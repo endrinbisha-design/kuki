@@ -1,0 +1,33 @@
+{
+  "kind": "retrospective measurement diagnostic, NOT tradable signal",
+  "sources": [
+    {
+      "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/asos1min.py?station=NYC&vars=tmpf&sts=2025-05-01T05%3A00Z&ets=2025-10-01T05%3A00Z&what=download&tz=UTC&sample=1min",
+      "started_utc": "2026-09-16T04:13:36.521510+00:00",
+      "received_utc": "2026-09-16T04:13:47.390154+00:00",
+      "sha256": "d322e80bbf4f0a636b487e9ff4490c757cd0205044b0298f3e23e2c7c9b6b706",
+      "latency": "~24 hours per provider; not real-time"
+    },
+    {
+      "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/asos1min.py?station=NYC&vars=tmpf&sts=2026-05-01T05%3A00Z&ets=2026-08-02T05%3A00Z&what=download&tz=UTC&sample=1min",
+      "started_utc": "2026-09-16T04:13:47.683073+00:00",
+      "received_utc": "2026-09-16T04:13:53.678023+00:00",
+      "sha256": "6cca2c064f4532e1092f32be87f57e1f93b7e15954469dd76fafd64009c15d08",
+      "latency": "~24 hours per provider; not real-time"
+    }
+  ],
+  "matched_days": 236,
+  "eligible_days": 90,
+  "coverage_rule": "at least 1000 unique minutes and no gap including day edges over 60 minutes",
+  "hourly_rounded_exact_match": 0.43333333333333335,
+  "minute_rounded_exact_match": 0.4,
+  "hourly_max_mae_f": 0.6511111111111111,
+  "minute_max_mae_f": 0.7555555555555555,
+  "minute_minus_hourly_mean_f": 1.4066666666666665,
+  "limitations": [
+    "Archive arrives about 24h late; using it at same-day decision time would leak future availability.",
+    "One-minute service temperature quantization and missingness differ from METAR.",
+    "CLI current revisions, not exact Kalshi settlement versions.",
+    "Only matched covered dates; retrospective diagnostic, not model or P&L improvement."
+  ]
+}

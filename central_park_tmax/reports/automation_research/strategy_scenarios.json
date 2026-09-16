@@ -1,0 +1,338 @@
+{
+  "kind": "hypothetical friction scenarios; NOT historical executable returns",
+  "input_sha256": "0286a8b5842ba3a2dca0b20324cd116769feee2b5d1c9d171eef91428df5df56",
+  "rows": 230,
+  "days": 33,
+  "results": [
+    {
+      "mode": "paper",
+      "strategy": "report_flat",
+      "orders": 67,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 67,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1007.595,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 7.595,
+      "max_realized_drawdown": 3.65,
+      "decision_reasons": {
+        "candidate": 186,
+        "no_net_edge": 44
+      },
+      "assumptions": {
+        "half_spread": 0.005,
+        "fee_per_contract": 0.01,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "blend_flat",
+      "orders": 12,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 12,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1000.53,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 0.53,
+      "max_realized_drawdown": 1.07,
+      "decision_reasons": {
+        "no_net_edge": 207,
+        "candidate": 23
+      },
+      "assumptions": {
+        "half_spread": 0.005,
+        "fee_per_contract": 0.01,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "blend_guarded",
+      "orders": 0,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 0,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1000.0,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 0.0,
+      "max_realized_drawdown": 0.0,
+      "decision_reasons": {
+        "quality_gate": 66,
+        "no_net_edge": 164
+      },
+      "assumptions": {
+        "half_spread": 0.005,
+        "fee_per_contract": 0.01,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "blend_robust",
+      "orders": 0,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 0,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1000.0,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 0.0,
+      "max_realized_drawdown": 0.0,
+      "decision_reasons": {
+        "quality_gate": 66,
+        "no_net_edge": 164
+      },
+      "assumptions": {
+        "half_spread": 0.005,
+        "fee_per_contract": 0.01,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "report_flat",
+      "orders": 63,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 63,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1006.18,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 6.18,
+      "max_realized_drawdown": 3.425,
+      "decision_reasons": {
+        "candidate": 167,
+        "no_net_edge": 63
+      },
+      "assumptions": {
+        "half_spread": 0.015,
+        "fee_per_contract": 0.02,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "blend_flat",
+      "orders": 2,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 2,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 999.85,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": -0.15,
+      "max_realized_drawdown": 0.15,
+      "decision_reasons": {
+        "no_net_edge": 228,
+        "candidate": 2
+      },
+      "assumptions": {
+        "half_spread": 0.015,
+        "fee_per_contract": 0.02,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "blend_guarded",
+      "orders": 0,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 0,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1000.0,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 0.0,
+      "max_realized_drawdown": 0.0,
+      "decision_reasons": {
+        "quality_gate": 66,
+        "no_net_edge": 164
+      },
+      "assumptions": {
+        "half_spread": 0.015,
+        "fee_per_contract": 0.02,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "blend_robust",
+      "orders": 0,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 0,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1000.0,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 0.0,
+      "max_realized_drawdown": 0.0,
+      "decision_reasons": {
+        "quality_gate": 66,
+        "no_net_edge": 164
+      },
+      "assumptions": {
+        "half_spread": 0.015,
+        "fee_per_contract": 0.02,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "report_flat",
+      "orders": 63,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 63,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1004.975,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 4.975,
+      "max_realized_drawdown": 3.75,
+      "decision_reasons": {
+        "candidate": 157,
+        "no_net_edge": 73
+      },
+      "assumptions": {
+        "half_spread": 0.025,
+        "fee_per_contract": 0.03,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "blend_flat",
+      "orders": 0,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 0,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1000.0,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 0.0,
+      "max_realized_drawdown": 0.0,
+      "decision_reasons": {
+        "no_net_edge": 230
+      },
+      "assumptions": {
+        "half_spread": 0.025,
+        "fee_per_contract": 0.03,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "blend_guarded",
+      "orders": 0,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 0,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1000.0,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 0.0,
+      "max_realized_drawdown": 0.0,
+      "decision_reasons": {
+        "quality_gate": 66,
+        "no_net_edge": 164
+      },
+      "assumptions": {
+        "half_spread": 0.025,
+        "fee_per_contract": 0.03,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    },
+    {
+      "mode": "paper",
+      "strategy": "blend_robust",
+      "orders": 0,
+      "states": {
+        "pending": 0,
+        "open": 0,
+        "settled": 0,
+        "expired": 0,
+        "cancelled": 0
+      },
+      "cash": 1000.0,
+      "reserved_cash": 0.0,
+      "open_cost": 0.0,
+      "realized_pnl": 0.0,
+      "max_realized_drawdown": 0.0,
+      "decision_reasons": {
+        "quality_gate": 66,
+        "no_net_edge": 164
+      },
+      "assumptions": {
+        "half_spread": 0.025,
+        "fee_per_contract": 0.03,
+        "synthetic_depth": 1,
+        "price_unchanged_after_latency": true
+      }
+    }
+  ],
+  "limitations": [
+    "Unresolved legacy price joins; no quote age, true bid/ask, depth or arrival history.",
+    "Fixed 10% weather blend is an exploratory choice on previously examined data.",
+    "Synthetic unchanged quotes after latency can overstate fills.",
+    "Outcomes released on an assumed two-day schedule; incomplete NYC boards.",
+    "No optimized winner or alpha claim; forward experiment needed."
+  ]
+}

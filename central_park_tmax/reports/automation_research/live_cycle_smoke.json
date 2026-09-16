@@ -1,0 +1,26 @@
+{
+  "started_utc": "2026-09-16T04:21:47.357622+00:00",
+  "mode": "paper",
+  "status": "degraded",
+  "model_id": "d25cc6e88bb4e3fd106a281839debdb16c3d7d5aeee3369f1251ba9c6efd7c4c",
+  "forecast_abstention": "Outside validated season/hour or five-minute decision window.",
+  "error": "HTTPError: HTTP Error 403: Forbidden",
+  "finished_utc": "2026-09-16T04:21:57.133691+00:00",
+  "portfolio": {
+    "mode": "paper",
+    "strategy": "blend_robust",
+    "orders": 0,
+    "states": {
+      "pending": 0,
+      "open": 0,
+      "settled": 0,
+      "expired": 0,
+      "cancelled": 0
+    },
+    "cash": 1000.0,
+    "reserved_cash": 0.0,
+    "open_cost": 0.0,
+    "realized_pnl": 0.0
+  },
+  "verification_note": "Actual public-feed smoke attempt; before source-hash enforcement was added. No live orders or background service."
+}
