@@ -1,43 +1,43 @@
 # Which source actually tells you the settlement, and when
 
-Measured over the 45 consecutive logged KNYC days, 2026-08-01 → 09-14
+Measured over the 46 consecutive logged KNYC days, 2026-08-01 → 09-15
 (`track_record/call_log.jsonl`). **Every number below is produced by
 `scripts/source_reliability.py`** — re-derived from the METAR archive on each run, never
 incremented by hand. Re-run it after adding a day and paste the output; do not edit the
 figures in place.
 
 This document exists because on 09-11 I claimed the preliminary CLI had beaten the
-six-hour group and that "the ordering is reversed." **Tested across all 45 days, that is
+six-hour group and that "the ordering is reversed." **Tested across all 46 days, that is
 wrong.** The groups are settlement-grade and the preliminary is not.
 
 ## The scoreboard
 
 | source | available | matches settlement |
 |---|---|---|
-| morning group (8 AM–2 PM) | 1:51 PM | 19/45 — **42 %** |
-| preliminary CLI | ~4:31–5:05 PM | 14/22 — **64 %** |
-| afternoon group (2 PM–8 PM) | 7:51 PM | 37/45 — **82 %** |
-| **max of ALL same-day groups** | **7:51 PM** | **44/45 — 98 %** |
+| morning group (8 AM–2 PM) | 1:51 PM | 19/46 — **41 %** |
+| preliminary CLI | ~4:31–5:05 PM | 15/23 — **65 %** |
+| afternoon group (2 PM–8 PM) | 7:51 PM | 38/46 — **83 %** |
+| **max of ALL same-day groups** | **7:51 PM** | **45/46 — 98 %** |
 
 **That last row says "all same-day groups" for a reason, and the wording is a correction.**
 It originally read "max of both groups" and was computed from the morning and afternoon
 groups only. 2026-09-14 broke it: an overnight-max day settling at 75, where morning
 (73.04) and afternoon (73.94) both round to 74, while the **2 AM–8 AM group reads 75.02**
-and was never consulted. Across the 45 days, daytime-only would miss **two** — 08-27 and
+and was never consulted. Across the 46 days, daytime-only would miss **two** — 08-27 and
 09-14 — where all-same-day-groups misses one. The 98 % was under-specified, not wrong; two
 of three available groups were going in, and no earlier day in the run stressed it.
 
 Read the timing column before the accuracy column; these are not competing at the same
 hour.
 
-* **At 4:40 PM the preliminary is the best thing available** — 64 % against the morning
-  group's 42 %. That much of the 09-11 observation survives.
+* **At 4:40 PM the preliminary is the best thing available** — 65 % against the morning
+  group's 41 %. That much of the 09-11 observation survives.
 * **Waiting until 7:51 PM beats it decisively.** Max of all same-day groups is 98 %. The claim that
   the preliminary supersedes the group was generalised from a single favourable day and
   does not hold.
 * The one failure of max-of-all-same-day-groups is **2026-08-27**, the sensor-contamination day
   where a 9-minute spike during heavy rain entered the group and the CLI's QC rejected it
-  (group 81, settled 77). That remains the only day in 45 where a group was wrong and the
+  (group 81, settled 77). That remains the only day in 46 where a group was wrong and the
   CLI right — so it is one exception, not a pattern, but it is the reason the 98 % is not
   100 %.
 
@@ -47,14 +47,14 @@ This is the useful finding, and it was sitting in the data the whole time:
 
 | settled − preliminary | days | share |
 |---|---|---|
-| **+0 °F** | 14 | **64 %** |
-| **+1 °F** | 8 | **36 %** |
+| **+0 °F** | 15 | **65 %** |
+| **+1 °F** | 8 | **35 %** |
 | anything else | **0** | **0 %** |
 
 Never negative. Never +2. The eight misses are 08-03, 08-17, 08-25, 08-30, 09-01, 09-03,
 09-06 and 09-13 — **every one low by exactly one degree.**
 
-The split has read 63/37, 65/35, 62/38 and **64/36** on four successive days.
+The split has read 63/37, 65/35, 62/38, 64/36 and **65/35** on five successive days.
 Same finding, moving numbers; quote it from the script, never from memory. Zero mass
 outside the two points is the part that has held across all four.
 
@@ -62,8 +62,8 @@ So the preliminary does not give a point estimate with unknown error; it gives a
 two-outcome distribution over adjacent integers**, known at ~4:40 PM:
 
 ```
-P(settle = preliminary)     ≈ 0.64
-P(settle = preliminary + 1) ≈ 0.36
+P(settle = preliminary)     ≈ 0.65
+P(settle = preliminary + 1) ≈ 0.35
 P(anything else)            ≈ 0
 ```
 
@@ -144,12 +144,46 @@ seven days cannot pin the spread. Going forward, `prelim_low_f` should be record
 alongside `prelim_high_f` so this can be re-derived rather than re-discovered — the
 evidence expires in about a week.
 
+## Quantisation beats modelling near a rounding boundary
+
+The single most useful result of the run, from 2026-09-15. Three consecutive `:51`
+snapshots read 71.06 °F and the day looked finished; the banked value sat **0.44 °F** below
+the 71.5 rounding boundary. The gap cannot take an arbitrary value — observations are
+reported in 0.1 °C, so it lands on multiples of 0.18 °F, and across 46 logged days the
+afternoon-group gap distribution is:
+
+```
+0.00 ×6    0.90 ×15    1.08 ×10    1.98 ×12    2.16 ×1    3.96 ×1
+```
+
+**Nothing exists between 0.00 and 0.90.** So the outcome was strictly binary — gap 0 →
+settle 71, gap ≥ 0.90 → settle 72 — with no third possibility, and 39 of 45 prior days sat
+on the favourable side. Called **72 at 87 %**; the afternoon group arrived at 71.96, a gap
+of exactly **+0.90**, the modal value.
+
+Two other methods were tried first on that day and both failed:
+
+| method | call | outcome |
+|---|---|---|
+| `models/post_peak` | 70–71 at 75 % raw, 55 % calibrated | wrong |
+| base rate on "rising through 13:51" | 74+ at 24 % | wrong — vanished once conditioned on the flat 14:51 |
+| **gap quantisation** | **72 at 87 %** | **right** |
+
+The lesson is not that the model is bad but that **the two failures were attempts to fit
+the atmosphere while the winner was a statement about the instrument.** Whenever the banked
+max lands within 0.44 °F of a `.5` boundary, the meteorology is nearly irrelevant: the
+question reduces to whether the gap is zero, which is a 13 % event. That is checkable in
+one line and does not decay with the season.
+
+The market held 72–73 at 80–85 ¢ (~82 %) throughout, against the 87 % above — fairly
+priced, and no trade was warranted.
+
 ## Honest limits
 
-* **n = 22 for the preliminary**, not 45. Twenty-three of the logged days never recorded a
+* **n = 23 for the preliminary**, not 46. Twenty-three of the logged days never recorded a
   preliminary-versus-final comparison, and the NWS CLI archive retains only about a week,
-  so that evidence is permanently gone. The split rests on twenty-two days.
-* A two-point distribution with zero mass elsewhere on n = 22 is exactly the kind of clean
+  so that evidence is permanently gone. The split rests on twenty-three days.
+* A two-point distribution with zero mass elsewhere on n = 23 is exactly the kind of clean
   result that gets ragged with more data. The direction (never high) is better supported
   than the magnitudes.
 * One station, one warm season. Nothing checked at KPHX or KLAS.
