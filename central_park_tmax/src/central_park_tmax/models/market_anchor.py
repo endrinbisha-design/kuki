@@ -49,7 +49,10 @@ class MarketAnchoredBlend:
         if self.n_dates < self.min_dates:
             return self
         # Equal contribution per date despite unequal numbers of quotes/buckets.
-        w = (1.0 / d.map(d.value_counts())).to_numpy()
+        # copy=True is load-bearing under pandas >= 3.0: copy-on-write makes to_numpy()
+        # hand back a READ-ONLY view, so the in-place ``w /= w.sum()`` below raised
+        # "output array is read-only" and took out five tests.
+        w = (1.0 / d.map(d.value_counts())).to_numpy(copy=True)
         w /= w.sum()
         delta = p - m
         denominator = np.sum(w * delta**2) + self.penalty

@@ -102,6 +102,28 @@ class DayMarket:
     source: str             # 'kalshi' | 'simulated'
 
 
+def _candle_cents(node: dict | None, field: str = "close") -> float | None:
+    """A candlestick price in cents, tolerant of both API encodings.
+
+    Kalshi moved the candlestick price fields from integer cents (``close``) to dollar
+    STRINGS (``close_dollars``, e.g. ``"0.5000"``). Found 2026-09-16: the old reader asked
+    for ``close`` only, got None on every strike, and reported "no prices" for a board
+    that was trading thousands of contracts. The orderbook reader above had carried the
+    ``_dollars`` fallback for a while; it was simply never applied here.
+
+    Read BOTH spellings and expect a third. Also note the old line used ``a or b``, which
+    silently discards a legitimate 0-cent close -- the price of a bucket the market has
+    written off, which is exactly the value a backtest must see to reject a bet.
+    """
+    if not node:
+        return None
+    v = node.get(field)
+    if v is not None:
+        return float(v)
+    v = node.get(field + "_dollars")
+    return float(v) * 100.0 if v is not None else None
+
+
 # --------------------------------------------------------------------------------------
 # Real Kalshi client (public market-data routes)
 # --------------------------------------------------------------------------------------
@@ -233,8 +255,11 @@ class KalshiMarketDataSource:
         if not candles:
             return None
         last = candles[-1]
-        price_c = (last.get("yes_ask", {}) or {}).get("close") or (last.get("price", {}) or {}).get("close")
-        return float(price_c) / 100.0 if price_c is not None else None
+        for node in ("yes_ask", "price"):
+            p = _candle_cents(last.get(node))
+            if p is not None:
+                return p / 100.0
+        return None
 
 
 # --------------------------------------------------------------------------------------
