@@ -56,7 +56,7 @@ Never negative. Never +2. The eight misses are 08-03, 08-17, 08-25, 08-30, 09-01
 
 The split has read 63/37, 65/35, 62/38, 64/36 and **65/35** on five successive days.
 Same finding, moving numbers; quote it from the script, never from memory. Zero mass
-outside the two points is the part that has held across all four.
+outside the two points is the part that has held across all five.
 
 So the preliminary does not give a point estimate with unknown error; it gives a **tight
 two-outcome distribution over adjacent integers**, known at ~4:40 PM:
@@ -75,8 +75,9 @@ All three are attempts to
 collapse a distribution that is already sharp into a point call — and all three are worse
 than 100 %, so collapsing it loses information rather than adding any. For a market quoted
 in whole-degree buckets the split has an obvious reading — when both integers sit inside one
-bucket the bucket is ~certain, and when they straddle a boundary the split *is* the price —
-but see the next section before believing that is worth anything. It mostly is not.
+bucket the bucket is ~certain, and when they straddle a boundary the split *is* the price.
+The next section measures how often each case arises and what the market charges for it:
+the certainty is real and more frequent than first reported, and it is priced at 98 ¢.
 
 ## "Directly usable": the count was wrong, the conclusion survives
 
