@@ -16,6 +16,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+from sklearn.impute import SimpleImputer
 
 from .features_frame import FeatureMatrix
 
@@ -41,7 +42,8 @@ class QuantileBoosting:
     def fit(self, fm: FeatureMatrix) -> "QuantileBoosting":
         from sklearn.ensemble import GradientBoostingRegressor
         self.feature_names = fm.feature_names
-        X = fm.X.to_numpy()
+        self.imputer = SimpleImputer(strategy="median", keep_empty_features=True)
+        X = self.imputer.fit_transform(fm.X.to_numpy())
         resid = fm.residual_target().to_numpy()
         for q in self.quantiles:
             gbr = GradientBoostingRegressor(
@@ -55,6 +57,10 @@ class QuantileBoosting:
 
     def predict_quantiles(self, fm: FeatureMatrix) -> pd.DataFrame:
         X = fm.X_for(self.feature_names).to_numpy()
+        if hasattr(self, "imputer"):
+            X = self.imputer.transform(X)
+        elif np.isnan(X).any():
+            raise ValueError("Legacy quantile model has no fitted imputer; retrain first.")
         base = fm.baseline.to_numpy(dtype=float)
         cols = []
         for q in self.quantiles:

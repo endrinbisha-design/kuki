@@ -51,13 +51,14 @@ class FeatureMatrix:
                    feature_names: Optional[list[str]] = None) -> "FeatureMatrix":
         if feature_names is None:
             feature_names = [c for c in df.columns
-                             if c not in RESERVED_COLUMNS
+                             if c not in RESERVED_COLUMNS | {target_col, baseline_col}
                              and pd.api.types.is_numeric_dtype(df[c])]
+        if target_col in feature_names:
+            raise ValueError("The target cannot be used as a feature.")
         X = df[feature_names].apply(pd.to_numeric, errors="coerce")
-        # Simple, leakage-safe median imputation is applied per-fold by the trainer; here we
-        # just fill any residual NaN with column medians computed on THIS matrix (callers pass
-        # train-only frames when fitting).
-        X = X.fillna(X.median(numeric_only=True)).fillna(0.0)
+        # Keep missingness: fitted models own their TRAIN-only imputers. Computing
+        # medians here leaks test-batch information and differs from one-row live use.
+        X = X.replace([np.inf, -np.inf], np.nan)
         y = pd.to_numeric(df[target_col], errors="coerce")
         baseline = pd.to_numeric(df[baseline_col], errors="coerce")
         dates = pd.to_datetime(df["date"]) if "date" in df.columns else pd.Series(range(len(df)))
@@ -73,8 +74,8 @@ class FeatureMatrix:
             return self.X
         cols = {}
         for name in feature_names:
-            cols[name] = self.X[name] if name in self.X.columns else 0.0
-        return pd.DataFrame(cols)
+            cols[name] = self.X[name] if name in self.X.columns else np.nan
+        return pd.DataFrame(cols, index=self.X.index)
 
     def __len__(self) -> int:
         return len(self.X)

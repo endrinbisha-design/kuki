@@ -118,23 +118,29 @@ def build_frame(city: str, cfg: dict) -> pd.DataFrame:
 
 
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Leakage-safe features: everything is shifted so day D uses info through D-1."""
+    """Use completed days through D-2 at the previous-evening issuance.
+
+    At 00Z on target day D, local day D-1 has not ended in these cities. Shifting
+    one row previously exposed its final high/error. Calendar shifts also avoid
+    treating the previous available row as yesterday across missing-day gaps.
+    Final GHCN publication/revision timing remains unverified research-label bias.
+    """
     out = df.copy()
     doy = out.index.dayofyear
     out["doy_sin"] = np.sin(2 * np.pi * doy / 365.25)
     out["doy_cos"] = np.cos(2 * np.pi * doy / 365.25)
-    err_hist = out["error"].shift(1)                          # last settled day's error
+    err_hist = out["error"].shift(2, freq="D").reindex(out.index)
     out["bias_30d"] = err_hist.rolling(30, min_periods=10).mean()
     out["bias_7d"] = err_hist.rolling(7, min_periods=3).mean()
     out["err_std_30d"] = err_hist.rolling(30, min_periods=10).std()
-    out["yesterday_actual"] = out["actual_tmax_f"].shift(1)
-    out["yesterday_mos"] = out["mos_tmax_f"].shift(1)
+    out["last_completed_actual"] = out["actual_tmax_f"].shift(2, freq="D").reindex(out.index)
+    out["yesterday_mos"] = out["mos_tmax_f"].shift(1, freq="D").reindex(out.index)
     out["mos_change_1d"] = out["mos_tmax_f"] - out["yesterday_mos"]
     return out
 
 
 FEATURES = ["mos_tmax_f", "doy_sin", "doy_cos", "bias_30d", "bias_7d",
-            "err_std_30d", "yesterday_actual", "mos_change_1d"]
+            "err_std_30d", "last_completed_actual", "mos_change_1d"]
 
 
 def evaluate_city(city: str, cfg: dict) -> dict:

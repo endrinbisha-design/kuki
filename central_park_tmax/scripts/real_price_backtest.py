@@ -102,15 +102,20 @@ def settled_markets(series: str) -> dict[dt.date, list[dict]]:
     return by_day
 
 
-def hourly_prices(series: str, ticker: str, close_iso: str, offset: int) -> dict[int, float]:
-    """local hour -> mid price, from the candle covering that hour."""
+def hourly_prices(series: str, ticker: str, close_iso: str, offset: int) -> dict[tuple[dt.date, int], float]:
+    """(local date, hour) -> midpoint proxy at the candle END, never a fill.
+
+    The 36-hour query spans multiple dates. Keying by hour alone silently overwrote
+    one day's quote with another and could join post-outcome prices to earlier signals.
+    Fixed offsets remain appropriate only for the warm-season study configured here.
+    """
     try:
         end = int(dt.datetime.fromisoformat(close_iso.replace("Z", "+00:00")).timestamp())
     except Exception:
         return {}
     d = _get(f"{BASE}/series/{series}/markets/{ticker}/candlesticks"
              f"?start_ts={end - 36*3600}&end_ts={end}&period_interval=60")
-    out: dict[int, float] = {}
+    out: dict[tuple[dt.date, int], float] = {}
     for c in d.get("candlesticks", []):
         ts = c.get("end_period_ts")
         if ts is None:
@@ -131,8 +136,8 @@ def hourly_prices(series: str, ticker: str, close_iso: str, offset: int) -> dict
             p = None
         if p is None:
             continue
-        out[(dt.datetime.fromtimestamp(ts, dt.timezone.utc)
-             + dt.timedelta(hours=offset)).hour] = p
+        local = dt.datetime.fromtimestamp(ts, dt.timezone.utc) + dt.timedelta(hours=offset)
+        out[(local.date(), local.hour)] = p
     return out
 
 
@@ -231,7 +236,7 @@ def main() -> int:
                     lo, hi = m.get("floor_strike"), m.get("cap_strike")
                     if lo is None or hi is None:
                         continue
-                    price = prices.get(m["ticker"], {}).get(hour)
+                    price = prices.get(m["ticker"], {}).get((day, hour))
                     if price is None or not (0.03 <= price <= 0.97):
                         continue
                     p = bucket_probability(outlook, int(lo), int(hi))

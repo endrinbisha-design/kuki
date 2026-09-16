@@ -71,7 +71,8 @@ def build(city: str, icao: str) -> pd.DataFrame:
     doy = df.index.dayofyear
     df["doy_sin"] = np.sin(2 * np.pi * doy / 365.25)
     df["doy_cos"] = np.cos(2 * np.pi * doy / 365.25)
-    hist = df["err"].shift(1)
+    # 00Z is still the previous local evening: D-1's final daily high is unavailable.
+    hist = df["err"].shift(2, freq="D").reindex(df.index)
     df["bias_30d"] = hist.rolling(30, min_periods=10).mean()
     df["estd_30d"] = hist.rolling(30, min_periods=10).std()
     return df.dropna(subset=FEATS)

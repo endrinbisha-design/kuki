@@ -25,7 +25,7 @@ from ..models.calibration import ResidualCalibrator
 from ..models.features_frame import FeatureMatrix
 from ..models.quantiles import QuantileBoosting
 from ..data.storage import sha256_file, write_json
-from ..evaluation.splits import train_valid_split
+from ..evaluation.splits import train_tune_calibration_split
 from .. import __version__
 
 log = get_logger(__name__)
@@ -94,6 +94,11 @@ class VintageModel:
     train_end: str
     n_train: int
     feature_stats: Optional[object] = None   # ood_guard.FeatureStats (None in old bundles)
+    tune_start: Optional[str] = None
+    tune_end: Optional[str] = None
+    calibration_start: Optional[str] = None
+    calibration_end: Optional[str] = None
+    n_calibration: int = 0
 
 
 @dataclass
@@ -124,10 +129,10 @@ def train_models(cfg: AppConfig, dataset: pd.DataFrame,
     for vintage in vintages:
         vdf = (dataset[dataset["vintage"] == vintage] if "vintage" in dataset else dataset)
         vdf = vdf.dropna(subset=[target_col, "baseline_tmax_f"]).sort_values("date").reset_index(drop=True)
-        if len(vdf) < 30:
-            log.warning("Vintage %s: only %d labeled rows; skipping training.", vintage, len(vdf))
+        if pd.to_datetime(vdf["date"]).dt.normalize().nunique() < 30:
+            log.warning("Vintage %s: fewer than 30 distinct labeled dates; skipping training.", vintage)
             continue
-        tr_core, tr_val = train_valid_split(vdf, valid_fraction=0.15)
+        tr_core, tr_val, tr_cal = train_tune_calibration_split(vdf)
         fm_tr = FeatureMatrix.from_frame(tr_core, target_col=target_col)
         fm_val = (FeatureMatrix.from_frame(tr_val, target_col=target_col,
                                            feature_names=fm_tr.feature_names)
@@ -149,10 +154,9 @@ def train_models(cfg: AppConfig, dataset: pd.DataFrame,
             log.warning("Quantile model training failed for %s: %s", vintage, exc)
 
         calib = ResidualCalibrator()
-        if fm_val is not None and len(fm_val):
-            calib.add(fm_val.y.to_numpy(), boost.predict(fm_val))
-        else:
-            calib.add(fm_tr.y.to_numpy(), boost.predict(fm_tr))
+        fm_cal = FeatureMatrix.from_frame(tr_cal, target_col=target_col,
+                                           feature_names=fm_tr.feature_names)
+        calib.add(fm_cal.y.to_numpy(), boost.predict(fm_cal))
 
         from ..models.ood_guard import FeatureStats
         bundle.models[vintage] = VintageModel(
@@ -160,12 +164,15 @@ def train_models(cfg: AppConfig, dataset: pd.DataFrame,
             feature_names=fm_tr.feature_names, oos_residuals=calib.array(),
             reporting_method=cfg.reporting_convention.method,
             contract_rule_version=cfg.contract_rules.version,
-            train_start=str(vdf["date"].min()), train_end=str(vdf["date"].max()),
-            n_train=len(vdf),
+            train_start=str(tr_core["date"].min()), train_end=str(tr_core["date"].max()),
+            n_train=len(tr_core),
             feature_stats=FeatureStats.from_frame(fm_tr.X),
+            tune_start=str(tr_val["date"].min()), tune_end=str(tr_val["date"].max()),
+            calibration_start=str(tr_cal["date"].min()),
+            calibration_end=str(tr_cal["date"].max()), n_calibration=len(tr_cal),
         )
         log.info("Trained vintage=%s backend=%s n=%d resid_std=%.2f",
-                 vintage, boost.name, len(vdf), float(np.std(calib.array())))
+                 vintage, boost.name, len(tr_core), float(np.std(calib.array())))
 
     if save_path is None:
         save_path = Path(cfg.paths.models_dir) / "model_bundle.joblib"
@@ -194,6 +201,9 @@ def _write_model_card(cfg: AppConfig, bundle: TrainedBundle, path: Path) -> None
         "station": cfg.station.model_dump(),
         "vintages": {
             v: {"n_train": m.n_train, "train_start": m.train_start, "train_end": m.train_end,
+                "tune_start": m.tune_start, "tune_end": m.tune_end,
+                "calibration_start": m.calibration_start, "calibration_end": m.calibration_end,
+                "n_calibration": m.n_calibration,
                 "n_features": len(m.feature_names), "backend": m.boosting.name,
                 "residual_std_f": float(np.std(m.oos_residuals))}
             for v, m in bundle.models.items()

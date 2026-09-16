@@ -1,0 +1,152 @@
+{
+  "input_sha256": "a92e8ab9bc122bee352b89adc230b8c3e7836470b19a35c1c00b67a93dc846c7",
+  "python": "3.12.14",
+  "sklearn": "1.8.0",
+  "protocol": {
+    "min_train_dates": 30,
+    "embargo_calendar_days": 2,
+    "penalty": 0.01,
+    "refit": "each day using prior eligible dates only",
+    "parameter_search": false
+  },
+  "n_rows": 1016,
+  "n_calendar_days": 37,
+  "n_city_days": 108,
+  "test_dates": [
+    "2026-06-24",
+    "2026-07-30"
+  ],
+  "scores": {
+    "raw_weather": {
+      "brier": 0.1935551087673089,
+      "log_loss": 0.6158976159665686
+    },
+    "chronological_isotonic": {
+      "brier": 0.18147583831095135,
+      "log_loss": 0.5705567601639852
+    },
+    "market": {
+      "brier": 0.13975114773043085,
+      "log_loss": 0.42395899634584316
+    },
+    "market_anchor": {
+      "brier": 0.13966577829380303,
+      "log_loss": 0.42569878747587464
+    }
+  },
+  "per_city": {
+    "KXHIGHNY": {
+      "raw_weather": {
+        "brier": 0.15240010743959342,
+        "log_loss": 0.47532370565832155
+      },
+      "chronological_isotonic": {
+        "brier": 0.15190982224259186,
+        "log_loss": 0.4736710929088777
+      },
+      "market": {
+        "brier": 0.1393785754074357,
+        "log_loss": 0.42430183511465114
+      },
+      "market_anchor": {
+        "brier": 0.13858442374719426,
+        "log_loss": 0.42359876968873983
+      }
+    },
+    "KXHIGHTLV": {
+      "raw_weather": {
+        "brier": 0.21259843687045174,
+        "log_loss": 0.643001796053443
+      },
+      "chronological_isotonic": {
+        "brier": 0.19078603414013662,
+        "log_loss": 0.612849057608321
+      },
+      "market": {
+        "brier": 0.1280398577426703,
+        "log_loss": 0.3968354913961308
+      },
+      "market_anchor": {
+        "brier": 0.12854851232295547,
+        "log_loss": 0.40225032705944425
+      }
+    },
+    "KXHIGHTPHX": {
+      "raw_weather": {
+        "brier": 0.21450436199476808,
+        "log_loss": 0.7284357247435428
+      },
+      "chronological_isotonic": {
+        "brier": 0.20215379679461137,
+        "log_loss": 0.6291283042106617
+      },
+      "market": {
+        "brier": 0.15222630916259594,
+        "log_loss": 0.451770871250665
+      },
+      "market_anchor": {
+        "brier": 0.15229798258153754,
+        "log_loss": 0.4521436437432307
+      }
+    }
+  },
+  "paired_brier_vs_market": {
+    "raw_weather": {
+      "mean_brier_difference_vs_market": 0.05380396103687808,
+      "ci95": [
+        0.022461844111278502,
+        0.08572137489665009
+      ],
+      "block_days": 7,
+      "draws": 2000,
+      "negative_is_better": true
+    },
+    "chronological_isotonic": {
+      "mean_brier_difference_vs_market": 0.041724690580520564,
+      "ci95": [
+        0.01356969515754389,
+        0.07149040464154204
+      ],
+      "block_days": 7,
+      "draws": 2000,
+      "negative_is_better": true
+    },
+    "market_anchor": {
+      "mean_brier_difference_vs_market": -8.536943662781323e-05,
+      "ci95": [
+        -0.002380268675676033,
+        0.0022040899560360747
+      ],
+      "block_days": 7,
+      "draws": 2000,
+      "negative_is_better": true
+    }
+  },
+  "mean_weather_weight": 0.07864620255525388,
+  "last_14_days_descriptive_only": {
+    "raw_weather": {
+      "brier": 0.22784668425969237,
+      "log_loss": 0.7375863994800019
+    },
+    "chronological_isotonic": {
+      "brier": 0.20693845401924346,
+      "log_loss": 0.6145571680147294
+    },
+    "market": {
+      "brier": 0.17964647789273047,
+      "log_loss": 0.5278032432006022
+    },
+    "market_anchor": {
+      "brier": 0.1800465378058658,
+      "log_loss": 0.5295965744159924
+    }
+  },
+  "limitations": [
+    "Previously examined archive, not a new untouched prospective holdout.",
+    "Legacy candle date joins and input-generation provenance have not been reconstructed.",
+    "Prices are midpoint/last-trade proxies, not executable prices; no depth or reception times.",
+    "Two-day label embargo is assumed; actual resolution timestamps are missing.",
+    "Incomplete between-contract boards: binary scores only, no joint PMF renormalization.",
+    "Probability improvement is not evidence of tradable alpha; no live model is promoted."
+  ]
+}

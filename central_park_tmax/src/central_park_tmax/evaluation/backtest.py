@@ -25,9 +25,11 @@ from ..models.discrete_outcomes import (integer_report_distribution, simulate_fr
 from ..models.features_frame import FeatureMatrix
 from ..models.linear import LinearResidual
 from ..models.quantiles import EmpiricalResidualQuantiles
+from ..models.reporting_convention import apply_reporting_convention
 from ..contracts.probabilities import contract_probability_report
 from . import metrics as M
-from .splits import Fold, auto_folds_from_span, folds_from_config, train_valid_split
+from .splits import Fold, auto_folds_from_span, folds_from_config, train_tune_calibration_split
+from ..pipelines.train import _select_hyperparameters
 
 log = get_logger(__name__)
 
@@ -80,7 +82,7 @@ def run_backtest(cfg: AppConfig, dataset: pd.DataFrame,
         vdf = dataset[dataset["vintage"] == vintage] if "vintage" in dataset else dataset
         vdf = vdf.dropna(subset=[target_col, "baseline_tmax_f"]).reset_index(drop=True)
         if len(vdf) < cfg.validation.min_train_days:
-            log.warning("Vintage %s has only %d rows; skipping.", vintage, len(vdf))
+            log.warning("Vintage %s has only %d rows; exploratory short-archive evaluation.", vintage, len(vdf))
         model_names = ["raw_primary", "rolling_bias_30d", "linear_residual", "boosting_residual"]
         fold_rows: list[dict] = []
         contract_rows: list[dict] = []
@@ -88,9 +90,9 @@ def run_backtest(cfg: AppConfig, dataset: pd.DataFrame,
         for fold in folds:
             tr = vdf[fold.train_mask(vdf["date"])].reset_index(drop=True)
             te = vdf[fold.test_mask(vdf["date"])].reset_index(drop=True)
-            if len(tr) < 30 or len(te) == 0:
+            if pd.to_datetime(tr["date"]).dt.normalize().nunique() < 30 or len(te) == 0:
                 continue
-            tr_core, tr_val = train_valid_split(tr, valid_fraction=0.15)
+            tr_core, tr_val, tr_cal = train_tune_calibration_split(tr)
 
             fm_tr = FeatureMatrix.from_frame(tr_core, target_col=target_col)
             fm_val = FeatureMatrix.from_frame(tr_val, target_col=target_col,
@@ -106,10 +108,9 @@ def run_backtest(cfg: AppConfig, dataset: pd.DataFrame,
             preds["linear_residual"] = lin.predict(fm_te)
             boost = BoostingResidualModel(
                 backend=cfg.models.boosting.backend,
-                n_estimators=cfg.models.boosting.n_estimators,
-                learning_rate=cfg.models.boosting.learning_rate,
-                max_depth=cfg.models.boosting.max_depth,
+                early_stopping_rounds=cfg.models.boosting.early_stopping_rounds,
                 random_state=cfg.models.random_seed,
+                **_select_hyperparameters(cfg, fm_tr, fm_val),
             ).fit(fm_tr, valid=fm_val)
             preds["boosting_residual"] = boost.predict(fm_te)
 
@@ -124,8 +125,9 @@ def run_backtest(cfg: AppConfig, dataset: pd.DataFrame,
             # calibrated on the validation tail only.
             best = "boosting_residual"
             calib = ResidualCalibrator()
-            if fm_val is not None and len(fm_val):
-                calib.add(fm_val.y.to_numpy(), boost.predict(fm_val))
+            fm_cal = FeatureMatrix.from_frame(tr_cal, target_col=target_col,
+                                              feature_names=fm_tr.feature_names)
+            calib.add(fm_cal.y.to_numpy(), boost.predict(fm_cal))
             resid = calib.array()
             contract_rows.extend(_score_integers_and_contracts(
                 actual, preds[best], resid, convention, thresholds, vintage, fold.index))
@@ -147,7 +149,7 @@ def _score_integers_and_contracts(actual, point_pred, residuals, convention, thr
     for a, p in zip(actual, point_pred):
         samples = simulate_from_residuals(float(p), residuals, 4000, rng)
         dist = integer_report_distribution(samples, convention=convention)
-        actual_int = int(round(a))
+        actual_int = apply_reporting_convention(float(a), convention)
         ll = M.log_loss_integer(dist.pmf, actual_int)
         rps = M.ranked_probability_score(dist.pmf, actual_int)
         row = {"vintage": vintage, "fold": fold, "log_loss": ll, "rps": rps,
@@ -174,10 +176,11 @@ def _aggregate(rows: list[dict], model_names: list[str]) -> dict:
         if sub.empty:
             continue
         out[name] = {
-            "mae": float(sub["mae"].mean()),
-            "rmse": float(sub["rmse"].mean()),
-            "mean_error": float(sub["mean_error"].mean()),
-            "pct_within_2f": float(sub["pct_within_2f"].mean()),
+            "n": int(sub["n"].sum()),
+            "mae": float(np.average(sub["mae"], weights=sub["n"])),
+            "rmse": float(np.sqrt(np.average(sub["rmse"] ** 2, weights=sub["n"]))),
+            "mean_error": float(np.average(sub["mean_error"], weights=sub["n"])),
+            "pct_within_2f": float(np.average(sub["pct_within_2f"], weights=sub["n"])),
             "by_year": sub.groupby("test_year")["mae"].mean().round(3).to_dict(),
         }
     return out

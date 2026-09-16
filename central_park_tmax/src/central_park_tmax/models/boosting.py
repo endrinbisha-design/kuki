@@ -12,6 +12,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+from sklearn.impute import SimpleImputer
 
 from ..logging_config import get_logger
 from .features_frame import FeatureMatrix
@@ -57,7 +58,9 @@ class BoostingResidualModel:
 
     def fit(self, fm: FeatureMatrix, valid: Optional[FeatureMatrix] = None) -> "BoostingResidualModel":
         self.feature_names = fm.feature_names
-        X, y = fm.X.to_numpy(), fm.residual_target().to_numpy()
+        self.imputer = SimpleImputer(strategy="median", keep_empty_features=True)
+        X = self.imputer.fit_transform(fm.X.to_numpy())
+        y = fm.residual_target().to_numpy()
         if self._backend == "xgboost":
             self._fit_xgb(X, y, valid)
         elif self._backend == "lightgbm":
@@ -78,7 +81,7 @@ class BoostingResidualModel:
         eval_set = None
         if valid is not None and len(valid) > 0:
             params["early_stopping_rounds"] = self.early_stopping_rounds
-            eval_set = [(valid.X_for(self.feature_names).to_numpy(),
+            eval_set = [(self._design(valid),
                          valid.residual_target().to_numpy())]
         self.model = xgb.XGBRegressor(**params)
         self.model.fit(X, y, eval_set=eval_set, verbose=False)
@@ -95,7 +98,7 @@ class BoostingResidualModel:
         callbacks = None
         eval_set = None
         if valid is not None and len(valid) > 0:
-            eval_set = [(valid.X_for(self.feature_names).to_numpy(),
+            eval_set = [(self._design(valid),
                          valid.residual_target().to_numpy())]
             callbacks = [lgb.early_stopping(self.early_stopping_rounds, verbose=False)]
         self.model.fit(X, y, eval_set=eval_set, callbacks=callbacks)
@@ -106,8 +109,8 @@ class BoostingResidualModel:
             max_iter=self.n_estimators, learning_rate=self.learning_rate,
             max_depth=self.max_depth, l2_regularization=self.reg_lambda,
             min_samples_leaf=max(5, int(self.min_child_weight)),
-            validation_fraction=0.15 if valid is None else None,
-            early_stopping=True if valid is None else False,
+            # Never let sklearn carve a random validation subset from a time series.
+            early_stopping=False,
             random_state=self.random_state,
         )
         self.model.fit(X, y)
@@ -115,11 +118,19 @@ class BoostingResidualModel:
     def predict(self, fm: FeatureMatrix) -> np.ndarray:
         if self.model is None:
             raise RuntimeError("Model not fitted.")
-        resid = self.model.predict(fm.X_for(self.feature_names).to_numpy())
+        resid = self.model.predict(self._design(fm))
         return fm.baseline.to_numpy(dtype=float) + resid
 
     def predict_residual(self, fm: FeatureMatrix) -> np.ndarray:
-        return self.model.predict(fm.X_for(self.feature_names).to_numpy())
+        return self.model.predict(self._design(fm))
+
+    def _design(self, fm: FeatureMatrix) -> np.ndarray:
+        X = fm.X_for(self.feature_names).to_numpy()
+        if not hasattr(self, "imputer"):
+            if np.isnan(X).any():
+                raise ValueError("Legacy model has no fitted imputer; retrain before predicting missing features.")
+            return X
+        return self.imputer.transform(X)
 
     def feature_importance(self) -> dict[str, float]:
         if self.model is None or self.feature_names is None:

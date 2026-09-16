@@ -1,0 +1,124 @@
+{
+  "input_sha256": "147e663588c930e115580ddb87c8a176d74b5b8122aeb54d812feffbb900af45",
+  "target": "remaining rise in hourly sampled maximum, NOT official settlement",
+  "n_days": 846,
+  "n_snapshots": 4919,
+  "test_dates": [
+    "2021-05-01",
+    "2026-08-01"
+  ],
+  "thresholds_f": [
+    0.05,
+    0.5,
+    1.0,
+    2.0,
+    3.0,
+    5.0,
+    8.0,
+    12.0
+  ],
+  "prior_strength": 30,
+  "scores": {
+    "hour_only_cdf_brier": 0.05725506171760491,
+    "hour_only_no_rise_brier": 0.13573652962291446,
+    "hour_only_abs_error": 0.5564704152287019,
+    "conditional_cdf_brier": 0.054599037808744554,
+    "conditional_no_rise_brier": 0.127094522935105,
+    "conditional_abs_error": 0.5388983671413531
+  },
+  "folds": [
+    {
+      "year": 2021,
+      "train_days": 300,
+      "test_days": 151,
+      "scores": {
+        "hour_only_cdf_brier": 0.06000215924870689,
+        "hour_only_no_rise_brier": 0.13998786508692276,
+        "hour_only_abs_error": 0.6006296159065753,
+        "conditional_cdf_brier": 0.05826465316051837,
+        "conditional_no_rise_brier": 0.13368487831202833,
+        "conditional_abs_error": 0.5907931550388301
+      }
+    },
+    {
+      "year": 2022,
+      "train_days": 451,
+      "test_days": 151,
+      "scores": {
+        "hour_only_cdf_brier": 0.05455903624208423,
+        "hour_only_no_rise_brier": 0.12734076639574762,
+        "hour_only_abs_error": 0.5472614327847078,
+        "conditional_cdf_brier": 0.05219102470664471,
+        "conditional_no_rise_brier": 0.11995388208114893,
+        "conditional_abs_error": 0.5297340705967062
+      }
+    },
+    {
+      "year": 2023,
+      "train_days": 602,
+      "test_days": 151,
+      "scores": {
+        "hour_only_cdf_brier": 0.05233462314137953,
+        "hour_only_no_rise_brier": 0.12841125513301277,
+        "hour_only_abs_error": 0.4971882348617624,
+        "conditional_cdf_brier": 0.04935436297017953,
+        "conditional_no_rise_brier": 0.11829715301355521,
+        "conditional_abs_error": 0.48055750615334913
+      }
+    },
+    {
+      "year": 2024,
+      "train_days": 753,
+      "test_days": 150,
+      "scores": {
+        "hour_only_cdf_brier": 0.05295018164616518,
+        "hour_only_no_rise_brier": 0.12427769318076272,
+        "hour_only_abs_error": 0.5281118890208414,
+        "conditional_cdf_brier": 0.05048417255314578,
+        "conditional_no_rise_brier": 0.11668147140661167,
+        "conditional_abs_error": 0.5040166099110838
+      }
+    },
+    {
+      "year": 2025,
+      "train_days": 903,
+      "test_days": 150,
+      "scores": {
+        "hour_only_cdf_brier": 0.06308438361036342,
+        "hour_only_no_rise_brier": 0.14661784908550762,
+        "hour_only_abs_error": 0.5951750980273232,
+        "conditional_cdf_brier": 0.059958838550528505,
+        "conditional_no_rise_brier": 0.13658579164603493,
+        "conditional_abs_error": 0.5794381186290123
+      }
+    },
+    {
+      "year": 2026,
+      "train_days": 1053,
+      "test_days": 93,
+      "scores": {
+        "hour_only_cdf_brier": 0.06270246033501826,
+        "hour_only_no_rise_brier": 0.1552908585169563,
+        "hour_only_abs_error": 0.579289800104809,
+        "conditional_cdf_brier": 0.05906471133557013,
+        "conditional_no_rise_brier": 0.14375864538478778,
+        "conditional_abs_error": 0.5551184389295549
+      }
+    }
+  ],
+  "paired_cdf_brier_difference": {
+    "mean": -0.002656023908860347,
+    "ci95": [
+      -0.00328961239700328,
+      -0.0020442953695530425
+    ],
+    "bootstrap": "7-observed-day blocks within year"
+  },
+  "limitations": [
+    "Hourly snapshots are not the continuous high or CLI settlement.",
+    "Observation timestamps do not establish real-time receipt times.",
+    "Missing-day coverage filters and missing observations may bias results.",
+    "Previously available research data; no untouched prospective holdout.",
+    "No market price comparison and no alpha claim; research-only model."
+  ]
+}

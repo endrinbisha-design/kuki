@@ -23,6 +23,12 @@ enforces it. Supporting analyses: [`POST_PEAK.md`](POST_PEAK.md),
 
 ---
 
+**Model audit and experimental improvements:** [`MODEL_AUDIT.md`](MODEL_AUDIT.md)
+documents validation fixes, chronological benchmark results (including regressions),
+conditional remaining-rise and market-anchor experiments, and the gaps that prevent
+these results from establishing executable trading alpha. Research models are not
+automatically promoted to the live prediction path.
+
 ## 1. Scientific motivation
 
 Numerical weather prediction (NWP) models have systematic, location-specific errors. Central

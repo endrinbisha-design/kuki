@@ -336,6 +336,8 @@ def predict_one(
         "missing_sources": sources_missing or [],
         "top_model_attributions": attributions,
         "model_trained_through": (model.train_end if model else None),
+        "model_tuned_through": (getattr(model, "tune_end", None) if model else None),
+        "model_calibrated_through": (getattr(model, "calibration_end", None) if model else None),
         "reporting_convention_version": convention_version(reporting_method),
         "contract_rule_version": cfg.contract_rules.version,
         "uncertainty_method": "+".join(uncertainty_used) + "+simulation",
@@ -349,7 +351,7 @@ def predict_one(
 def _feature_matrix_for_predict(row: dict, feature_names: list[str], baseline: float) -> FeatureMatrix:
     df = pd.DataFrame([row])
     X = df.reindex(columns=feature_names)
-    X = X.apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    X = X.apply(pd.to_numeric, errors="coerce").replace([np.inf, -np.inf], np.nan)
     return FeatureMatrix(X=X.reset_index(drop=True),
                          y=pd.Series([np.nan]),
                          baseline=pd.Series([float(baseline)]),

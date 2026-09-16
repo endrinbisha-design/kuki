@@ -45,6 +45,11 @@ def folds_from_config(fold_cfgs) -> list[Fold]:
 
 
 def _validate_non_overlap(folds: list[Fold]) -> None:
+    for fold in folds:
+        if fold.train_end >= fold.test_start:
+            raise ValueError(f"Fold {fold.index}: train_end must precede test_start.")
+        if fold.test_start > fold.test_end:
+            raise ValueError(f"Fold {fold.index}: test window is reversed.")
     for a, b in zip(folds, folds[1:]):
         if b.test_start <= a.test_end:
             raise ValueError(
@@ -61,11 +66,30 @@ def train_valid_split(train_df: pd.DataFrame, valid_fraction: float = 0.15,
                       date_col: str = "date") -> tuple[pd.DataFrame, pd.DataFrame]:
     """Carve a chronological validation tail from the training frame (no leakage)."""
     df = train_df.sort_values(date_col).reset_index(drop=True)
-    n = len(df)
+    if not 0 < valid_fraction < 1:
+        raise ValueError("valid_fraction must be between zero and one.")
+    dates = pd.to_datetime(df[date_col]).dt.normalize()
+    unique = dates.drop_duplicates().sort_values()
+    n = len(unique)
     if n < 10:
         return df, df.iloc[0:0]
     cut = int(n * (1 - valid_fraction))
-    return df.iloc[:cut].reset_index(drop=True), df.iloc[cut:].reset_index(drop=True)
+    boundary = unique.iloc[cut]
+    return (df[dates < boundary].reset_index(drop=True),
+            df[dates >= boundary].reset_index(drop=True))
+
+
+def train_tune_calibration_split(df: pd.DataFrame, date_col: str = "date"):
+    """Chronological 70/15/15 by distinct date; calibration never selects models.
+
+    These are date-order guards, not a substitute for point-in-time target provenance.
+    Final/revised GHCN labels still cannot establish historical settlement availability.
+    """
+    core_tune, calibration = train_valid_split(df, 0.15, date_col)
+    core, tune = train_valid_split(core_tune, 0.15 / 0.85, date_col)
+    if core.empty or tune.empty or calibration.empty:
+        raise ValueError("Need enough distinct dates for train/tune/calibration splits.")
+    return core, tune, calibration
 
 
 def auto_folds_from_span(dates: pd.Series, n_folds: int = 3,

@@ -60,6 +60,21 @@ def _trajectory_temps(run, target_date: date, location_key: str, hours_local: li
     return out
 
 
+def _completed_daily_history(series: Optional[pd.Series], issue_local: datetime):
+    """Exclude unfinished local days from final daily aggregates.
+
+    This is a necessary period-completion guard, NOT proof of publication availability.
+    A revised GHCN history still needs vintage/publication metadata for a fully
+    point-in-time backtest. Missing such metadata must be disclosed by the caller.
+    """
+    if series is None:
+        return None
+    idx = pd.to_datetime(series.index)
+    if idx.tz is not None:
+        raise ValueError("Daily history must be indexed by naive local observation dates.")
+    return series[idx.normalize() < pd.Timestamp(issue_local.date())]
+
+
 def build_feature_row(
     target_date: date,
     vintage_name: str,
@@ -78,6 +93,9 @@ def build_feature_row(
     trajectory_hours = trajectory_hours or [0, 3, 6, 9, 12, 15, 18, 21]
     issue_utc = to_utc(issue_local)
     primary_key = locations.primary.key
+    # A previous-evening forecast cannot know that evening's final daily high/rainfall.
+    daily_tmax_f = _completed_daily_history(daily_tmax_f, issue_local)
+    daily_prcp_mm = _completed_daily_history(daily_prcp_mm, issue_local)
 
     row: dict = {
         "date": target_date.isoformat(),

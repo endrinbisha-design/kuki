@@ -14,6 +14,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
 
 from .features_frame import FeatureMatrix
 
@@ -46,7 +47,8 @@ class LinearContinuous:
             est = Ridge(alpha=max(self.alpha, 10.0 * n_features / max(n_samples, 1)))
         else:
             est = LinearRegression()
-        self.model = Pipeline([("scale", StandardScaler()), ("lm", est)])
+        self.model = Pipeline([("impute", SimpleImputer(strategy="median", keep_empty_features=True)),
+                               ("scale", StandardScaler()), ("lm", est)])
         self.model.fit(fm.X, fm.y)
         return self
 
@@ -85,7 +87,8 @@ class LinearResidual:
                 "linear_residual: %d samples for %d features is underdetermined; "
                 "using ridge(alpha=%.1f).", n_samples, n_features, alpha)
         est = Ridge(alpha=alpha) if use_ridge else LinearRegression()
-        self.model = Pipeline([("scale", StandardScaler()), ("lm", est)])
+        self.model = Pipeline([("impute", SimpleImputer(strategy="median", keep_empty_features=True)),
+                               ("scale", StandardScaler()), ("lm", est)])
         self.model.fit(fm.X_for(self.feature_names), fm.residual_target())
         return self
 
