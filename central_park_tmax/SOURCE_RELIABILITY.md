@@ -78,34 +78,51 @@ in whole-degree buckets the split has an obvious reading — when both integers 
 bucket the bucket is ~certain, and when they straddle a boundary the split *is* the price —
 but see the next section before believing that is worth anything. It mostly is not.
 
-## "Directly usable" needs heavy qualification
+## "Directly usable": the count was wrong, the conclusion survives
 
-The claim above — that when both integers fall in one bucket the bucket is near-certain —
-is true and also much less useful than it sounds. Checked against the real KXHIGHNY bucket
-layout (`<=81`, `82-83`, `84-85`, `86-87`, `88-89`, `>=90`):
+**Corrected 2026-09-16, and the error was mine.** This section previously reported that
+only 4 days in 22 gave a genuine narrow-bucket certainty, and concluded that the split is
+worthless because "the cases where it delivers certainty are mostly cases that were already
+certain." Both the number and the reason were wrong.
+
+The cause: `scripts/source_reliability.py` hardcoded **August's** strike ladder (`<=81` …
+`>=90`) and applied it to every day. **The KXHIGHNY ladder re-centres daily.** On a cool
+September day the open-ended bucket is `<=69`, not `<=81`, so a preliminary of 72–79 sat in
+a normal 2-wide bucket while the script filed it under the wide one. That misclassified
+**11 of 23 days** and inflated the open-ended count from 7 to 16. The script also assumed
+2-wide buckets always pair `[even, even+1]`; the real ladders include `83-84` and `78-79`,
+so even the parity was wrong. The script now looks the ladder up per day.
+
+Against real ladders:
 
 | | days | result |
 |---|---|---|
-| both integers in one bucket | 18/22 (82 %) | bucket correct **18/18** |
-| …of which the wide open-ended `<=81` | **14** | certainty is nearly free |
-| …genuine 2-wide bucket | **4** | 4/4 |
-| integers straddle a boundary | 4/22 (18 %) | 64 % side won 2 of 4 |
+| both integers in one bucket | 15/23 (65 %) | bucket correct **15/15** |
+| …of which the open-ended bucket | **5** | certainty is nearly free |
+| …**genuine 2-wide bucket** | **10** | **10/10 correct** |
+| integers straddle a boundary | 8/23 (35 %) | majority side won **7/8** |
 
-**Fourteen of the eighteen are the open-ended `<=81` bucket.** On those days the preliminary
-was 80 or below, so the bucket was near-certain from the banked max alone — no distribution
-needed, and a market with the max already banked under 81 will be quoting that bucket near
-99 ¢. That is `EDGE_DECAY.md` territory, and the same wall `PRELIM_FALLING` hit when all
-nine of its fills came in at exactly $1.00.
+So the split delivers a genuine narrow-bucket near-certainty on **10 days in 23 — not 4 —
+and was right on all ten.** The straddle days went 7/8 to the majority side, not 2/4.
 
-Strip those out and the split makes a *genuine* narrow bucket near-certain on **4 days in
-22**, all four correct. Four days is not a strategy. On the 4 straddling days the majority
-side won twice, which is consistent with 64/36 and also consistent with almost anything at
-n = 4.
+**And it is still not tradeable, for the other reason.** Pricing those ten buckets from the
+17:00 candle on the day:
 
-So the honest version: the two-point distribution is a real and clean property of the
-preliminary, and it is a better *description* of what is knowable at 4:40 PM than any of
-the rules. Whether it is *tradeable* is unresolved and the base rates argue against it —
-the cases where it delivers certainty are mostly cases that were already certain.
+```
+08-01  86-87  100c     08-21  79-80  100c     08-22  77-78   97c
+08-23  80-81   96c     09-03  83-84   96c     09-04  84-85  100c
+09-06  75-76   98c     09-11  79-80  100c     09-13  78-79   97c
+09-15  72-73  100c
+```
+
+10/10 correct, mean ask **98 ¢**, four of them at exactly 100 ¢. Net **+1.1 % per bet**,
++$1.13 on ten $10 stakes, before any slippage or depth check. That is `EDGE_DECAY.md`
+again — the same wall `PRELIM_FALLING` hit at exactly $1.00, just a whisker above zero
+instead of on it.
+
+The honest summary: the two-point distribution is real, sharper than previously credited,
+and correctly identifies a near-certain bucket on 43 % of days. The market charges 98 ¢ for
+that certainty. The finding is sound; the trade is not there.
 
 ## The minimum is the mirror image, and far worse
 
