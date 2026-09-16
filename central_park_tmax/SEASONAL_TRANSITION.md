@@ -139,6 +139,33 @@ explained by the peak landing after the validity cutoff. On 2026-09-06 the peak 
 about 2 PM can be missed whether or not it falls before 4 PM, because the product that would
 reveal it does not yet exist.
 
+**Added 2026-09-16: the mechanism rule is scored on a feed that cannot see its own
+subject, so its 17/22 is not measuring what it claims.** The rule asks whether the 2 PM
+and 3 PM readings exceed the morning group — a question about the continuous trace — but
+the only evidence fed to it is the `:51` snapshot lattice, which is precisely the feed
+this project documents as under-reading the continuous max. On 09-16 the two disagreed
+outright:
+
+```
+snapshots   13:51 75.02   14:51 75.02   15:51 75.92   vs morning group 75.92  -> "no"
+CLI trace   peak 77.00 at 2:32 PM                     vs morning group 75.92  -> "yes"
+```
+
+The 2:32 PM excursion stood 1.1 °C above the 2:51 PM reading and appeared in **no
+snapshot at all**; it was visible only once the 4:31 PM preliminary named its time. So the
+rule was fed "no" on a day whose true answer was "yes", and it would have been fed the
+wrong input on every day where the afternoon peak falls between snapshots — which, given
+the gap distribution in `SOURCE_RELIABILITY.md`, is most days.
+
+This is a different and worse problem than the unexplained mechanism above. That one says
+the rule's *causal story* is wrong while its *tally* stands; this one says the tally itself
+was computed from the wrong variable. **The 17/22 should be treated as unmeasured, not as
+77 %.** Re-scoring it properly needs each day's CLI peak *time and value*, not the
+snapshots — and the NWS CLI archive retains only about a week, so the August and early-
+September days can never be re-scored. It can only be measured forward, from days where
+`prelim_high_f` is captured alongside the peak time. Until then, prefer the two-point
+split, which needs no trace shape at all.
+
 This matters for the autumn projection in §3 below. The favourable effect predicted there —
 earlier peaks clearing the 4 PM blind spot — is **weaker than stated**, because the blind
 spot is not anchored at 4 PM. It is anchored at the *2 PM group boundary*, which under EST
