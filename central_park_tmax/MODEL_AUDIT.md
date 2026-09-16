@@ -1,8 +1,11 @@
 # Model audit and improvements
 
 Audit date: 2026-09-16. Base: `1c001a522a6ecdfbb43632a04ee8d80884b2e8c3` on
-`claude/central-park-temp-forecast-u9gsw8`. Work is local on
-`codex/model-validation-improvements`; no remote push, trading, or scheduled collection.
+`claude/central-park-temp-forecast-u9gsw8`. The original audit was local on
+`codex/model-validation-improvements`; it was subsequently published to the original
+project branch as `22438345840c2eacc5e6e458a326dc95dbd03b7f` at the user's request.
+See [MODEL_FOLLOWUP.md](MODEL_FOLLOWUP.md) for the next experiments and collection status.
+No trades or scheduled collection were started.
 
 ## Bottom line
 

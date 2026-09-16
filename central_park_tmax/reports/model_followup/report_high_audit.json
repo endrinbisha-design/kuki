@@ -1,0 +1,143 @@
+{
+  "target": "current-revision archived NWS CLI high; not verified Kalshi settlement",
+  "day_basis": "fixed EST (UTC-5), decisions at 13:00-18:00 America/New_York",
+  "n_days": 844,
+  "n_snapshots": 4907,
+  "scores": {
+    "snapshot_only_rps": 0.8224920209229007,
+    "snapshot_only_mae": 1.0592417061611374,
+    "snapshot_only_log_loss": 2.5536440969013148,
+    "report_hour_only_rps": 0.5430988679355085,
+    "report_hour_only_mae": 0.7354462875197473,
+    "report_hour_only_log_loss": 1.3741745559935998,
+    "report_conditional_rps": 0.5348127071034602,
+    "report_conditional_mae": 0.7291469194312796,
+    "report_conditional_log_loss": 1.3632581553021716
+  },
+  "folds": [
+    {
+      "year": 2021,
+      "train_days": 302,
+      "test_days": 151,
+      "scores": {
+        "snapshot_only_rps": 0.8671434203057163,
+        "snapshot_only_mae": 1.0958057395143486,
+        "snapshot_only_log_loss": 2.4780274486592933,
+        "report_hour_only_rps": 0.5944179108599931,
+        "report_hour_only_mae": 0.8030905077262692,
+        "report_hour_only_log_loss": 1.4392720510070787,
+        "report_conditional_rps": 0.5914715368067356,
+        "report_conditional_mae": 0.8051876379690949,
+        "report_conditional_log_loss": 1.43499215348533
+      }
+    },
+    {
+      "year": 2022,
+      "train_days": 453,
+      "test_days": 151,
+      "scores": {
+        "snapshot_only_rps": 0.7743131037624853,
+        "snapshot_only_mae": 0.9963576158940397,
+        "snapshot_only_log_loss": 2.39466450391228,
+        "report_hour_only_rps": 0.5214080681138662,
+        "report_hour_only_mae": 0.7169977924944813,
+        "report_hour_only_log_loss": 1.3745905724697458,
+        "report_conditional_rps": 0.5135779719790261,
+        "report_conditional_mae": 0.7100441501103752,
+        "report_conditional_log_loss": 1.363149332237938
+      }
+    },
+    {
+      "year": 2023,
+      "train_days": 604,
+      "test_days": 151,
+      "scores": {
+        "snapshot_only_rps": 0.79660688322175,
+        "snapshot_only_mae": 1.0368653421633554,
+        "snapshot_only_log_loss": 2.5847991410816475,
+        "report_hour_only_rps": 0.5234125237011923,
+        "report_hour_only_mae": 0.7147902869757174,
+        "report_hour_only_log_loss": 1.3692034370776305,
+        "report_conditional_rps": 0.5123819950137315,
+        "report_conditional_mae": 0.701103752759382,
+        "report_conditional_log_loss": 1.3608643486454526
+      }
+    },
+    {
+      "year": 2024,
+      "train_days": 755,
+      "test_days": 150,
+      "scores": {
+        "snapshot_only_rps": 0.8268982739871005,
+        "snapshot_only_mae": 1.0652222222222223,
+        "snapshot_only_log_loss": 2.636840325300844,
+        "report_hour_only_rps": 0.5183469526973884,
+        "report_hour_only_mae": 0.7174444444444444,
+        "report_hour_only_log_loss": 1.3501976924598518,
+        "report_conditional_rps": 0.5098363298385915,
+        "report_conditional_mae": 0.7055555555555555,
+        "report_conditional_log_loss": 1.3360223957184478
+      }
+    },
+    {
+      "year": 2025,
+      "train_days": 905,
+      "test_days": 148,
+      "scores": {
+        "snapshot_only_rps": 0.8621451765680525,
+        "snapshot_only_mae": 1.118918918918919,
+        "snapshot_only_log_loss": 2.656322568224483,
+        "report_hour_only_rps": 0.5404472189738865,
+        "report_hour_only_mae": 0.7051801801801802,
+        "report_hour_only_log_loss": 1.303977793685286,
+        "report_conditional_rps": 0.5322314328236394,
+        "report_conditional_mae": 0.702027027027027,
+        "report_conditional_log_loss": 1.285842026738468
+      }
+    },
+    {
+      "year": 2026,
+      "train_days": 1053,
+      "test_days": 93,
+      "scores": {
+        "snapshot_only_rps": 0.8000372465377277,
+        "snapshot_only_mae": 1.0336917562724013,
+        "snapshot_only_log_loss": 2.5863728360292804,
+        "report_hour_only_rps": 0.5710989174289565,
+        "report_hour_only_mae": 0.7663082437275988,
+        "report_hour_only_log_loss": 1.4262578793599516,
+        "report_conditional_rps": 0.5581082385796732,
+        "report_conditional_mae": 0.7634408602150539,
+        "report_conditional_log_loss": 1.4179787394655463
+      }
+    }
+  ],
+  "rounded_snapshot_disagreement_rate": 0.6362559241706162,
+  "archived_outcome_check": {
+    "dates": 65,
+    "binary_contracts": 154,
+    "unmatched_contracts": 0,
+    "mismatches": 0,
+    "scope": "Archived partial between-contract outcomes; not fresh exchange verification or full boards."
+  },
+  "report_minus_sampled_mean_f": 0.7443127962085309,
+  "paired_conditional_minus_hour_rps": {
+    "mean": -0.008286160832048311,
+    "ci95": [
+      -0.01110372801629802,
+      -0.005537553897471647
+    ],
+    "bootstrap": "7 observed days within each year; descriptive"
+  },
+  "inputs": {
+    "backtest_datasets/knyc_hourly_2019_2026.csv": "147e663588c930e115580ddb87c8a176d74b5b8122aeb54d812feffbb900af45",
+    "backtest_datasets/cli_research/knyc_cli_highs.csv": "bd56019202610b3656a65bfc3481a09bbfb91dd5639f2ad5af4f66c8adce9e98"
+  },
+  "limitations": [
+    "IEM current revisions, not exact reports used by Kalshi; product issue time is not receipt time.",
+    "Observation timestamps assumed available; missing coverage filter may bias sample.",
+    "Research data previously inspected; no prospective untouched holdout.",
+    "PMF log loss clips zero mass at 1e-6 for scoring; distribution tails need further validation.",
+    "No orderbook/fill/P&L evaluation or automatic live promotion."
+  ]
+}

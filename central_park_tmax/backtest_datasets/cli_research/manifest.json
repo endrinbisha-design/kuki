@@ -1,0 +1,70 @@
+{
+  "target": "IEM-parsed current-revision NWS CLI daily high, not verified Kalshi payout",
+  "day_basis": "midnight-to-midnight fixed EST (UTC-5)",
+  "sources": [
+    {
+      "year": 2019,
+      "url": "https://mesonet.agron.iastate.edu/json/cli.py?station=KNYC&year=2019",
+      "request_started_utc": "2026-09-16T03:49:59.298520+00:00",
+      "received_utc": "2026-09-16T03:50:03.801545+00:00",
+      "response_sha256": "039a07e80be51047d7b96933220dae30f8621ad68865280f26bc9650e5ebe451",
+      "n_labels": 365
+    },
+    {
+      "year": 2020,
+      "url": "https://mesonet.agron.iastate.edu/json/cli.py?station=KNYC&year=2020",
+      "request_started_utc": "2026-09-16T03:49:59.299214+00:00",
+      "received_utc": "2026-09-16T03:50:03.845964+00:00",
+      "response_sha256": "20bc0201e4ee5059836b6133fcfe1b859d2c6f015a40046d2cedc084af059f20",
+      "n_labels": 366
+    },
+    {
+      "year": 2021,
+      "url": "https://mesonet.agron.iastate.edu/json/cli.py?station=KNYC&year=2021",
+      "request_started_utc": "2026-09-16T03:49:59.300250+00:00",
+      "received_utc": "2026-09-16T03:50:03.889268+00:00",
+      "response_sha256": "f2f43227821ae5fc5b98666512dd288521087778022c54127a7d37e5a69703b1",
+      "n_labels": 365
+    },
+    {
+      "year": 2022,
+      "url": "https://mesonet.agron.iastate.edu/json/cli.py?station=KNYC&year=2022",
+      "request_started_utc": "2026-09-16T03:50:03.832316+00:00",
+      "received_utc": "2026-09-16T03:50:08.589671+00:00",
+      "response_sha256": "66c9efbc4e6b6579b5782395799d01d949e8964953e02909dcbef30438171298",
+      "n_labels": 365
+    },
+    {
+      "year": 2023,
+      "url": "https://mesonet.agron.iastate.edu/json/cli.py?station=KNYC&year=2023",
+      "request_started_utc": "2026-09-16T03:50:03.866623+00:00",
+      "received_utc": "2026-09-16T03:50:08.652663+00:00",
+      "response_sha256": "e21cd75187b58fad8ad8e467144f6c354549bc78fc2eb5b0143d09ac3ec60c11",
+      "n_labels": 365
+    },
+    {
+      "year": 2024,
+      "url": "https://mesonet.agron.iastate.edu/json/cli.py?station=KNYC&year=2024",
+      "request_started_utc": "2026-09-16T03:50:03.910604+00:00",
+      "received_utc": "2026-09-16T03:50:08.568435+00:00",
+      "response_sha256": "923d5dbfd1a5cc302f74b9d25d5eea3151f948d9065611428da2b5d0785a1ba7",
+      "n_labels": 366
+    },
+    {
+      "year": 2025,
+      "url": "https://mesonet.agron.iastate.edu/json/cli.py?station=KNYC&year=2025",
+      "request_started_utc": "2026-09-16T03:50:08.589315+00:00",
+      "received_utc": "2026-09-16T03:50:13.192101+00:00",
+      "response_sha256": "147b3446b289d78247df9acd682d08009828777fcbbda8628c6d18e6108703e1",
+      "n_labels": 363
+    },
+    {
+      "year": 2026,
+      "url": "https://mesonet.agron.iastate.edu/json/cli.py?station=KNYC&year=2026",
+      "request_started_utc": "2026-09-16T03:50:08.613322+00:00",
+      "received_utc": "2026-09-16T03:50:13.048617+00:00",
+      "response_sha256": "c71bcb7b87142a37e0e06a0ecb58f4ccf93ec9d90c727e1366b7c8e9df12bc00",
+      "n_labels": 258
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "n_days": 33,
+  "n_rows": 230,
+  "matched_input_rows": 507,
+  "scores": {
+    "raw_weather": {
+      "brier": 0.1592436000601163,
+      "log_loss": 0.4717971064504017
+    },
+    "chronological_isotonic": {
+      "brier": 0.16732510971830153,
+      "log_loss": 0.5340717135677524
+    },
+    "market": {
+      "brier": 0.14473072920766103,
+      "log_loss": 0.43907220690834564
+    },
+    "market_anchor": {
+      "brier": 0.14095139601171547,
+      "log_loss": 0.4293710931846729
+    }
+  },
+  "legacy_weather_on_identical_rows": {
+    "brier": 0.15713598500239262,
+    "log_loss": 0.4880140358285248
+  },
+  "paired_vs_market": {
+    "raw_weather": {
+      "mean_brier_difference_vs_market": 0.014512870852455294,
+      "ci95": [
+        -0.03303143120916572,
+        0.05663036914973455
+      ],
+      "bootstrap": "7 observed-day circular blocks; missing calendar dates compressed; descriptive only",
+      "missing_calendar_days": 2
+    },
+    "market_anchor": {
+      "mean_brier_difference_vs_market": -0.003779333195945573,
+      "ci95": [
+        -0.010673365421554424,
+        0.001403555779059249
+      ],
+      "bootstrap": "7 observed-day circular blocks; missing calendar dates compressed; descriptive only",
+      "missing_calendar_days": 2
+    }
+  },
+  "mean_weather_weight": 0.09691833109552528,
+  "protocol": "Prior-year CLI weather fit; daily 30-date minimum market blend, 2-day embargo, penalty .01; fixed hyperparameters.",
+  "inputs": {
+    "labels": "bd56019202610b3656a65bfc3481a09bbfb91dd5639f2ad5af4f66c8adce9e98",
+    "hourly": "147e663588c930e115580ddb87c8a176d74b5b8122aeb54d812feffbb900af45",
+    "markets": "a92e8ab9bc122bee352b89adc230b8c3e7836470b19a35c1c00b67a93dc846c7"
+  },
+  "limitations": [
+    "Old candle joins unresolved, no executable books or receipt times.",
+    "Current CLI archive revisions, not contemporaneous report vintages.",
+    "Partial NYC contract boards, matched observation days, short previously examined sample.",
+    "No alpha/deployment claim regardless of score; fresh prospective evidence required."
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "status": "collection_failed",
+  "series": "KXHIGHNY",
+  "attempted_utc": "20260916T035735248885Z",
+  "base_url": "https://external-api.kalshi.com/trade-api/v2",
+  "error": "HTTP Error 403: Forbidden",
+  "successful_books": 0
+}

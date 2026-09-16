@@ -1,0 +1,119 @@
+{
+  "n_rows": 230,
+  "n_days": 33,
+  "matched_rows": 507,
+  "unmatched_rows": 3,
+  "scores": {
+    "price": {
+      "brier": 0.14473072920766103,
+      "log_loss": 0.43907220690834564
+    },
+    "model_p": {
+      "brier": 0.15713598500239262,
+      "log_loss": 0.4880140358285248
+    },
+    "global_anchor": {
+      "brier": 0.14378757405902134,
+      "log_loss": 0.4377562646571123
+    },
+    "state_anchor": {
+      "brier": 0.14390510950497967,
+      "log_loss": 0.4388919345373137
+    }
+  },
+  "per_state": {
+    "below_peak": {
+      "days": 15,
+      "scores": {
+        "price": {
+          "brier": 0.11836680555555557,
+          "log_loss": 0.3879290337435054
+        },
+        "model_p": {
+          "brier": 0.14778844253809384,
+          "log_loss": 0.47764515452615675
+        },
+        "global_anchor": {
+          "brier": 0.11557820625022898,
+          "log_loss": 0.38985387451547915
+        },
+        "state_anchor": {
+          "brier": 0.11661018748384192,
+          "log_loss": 0.3973568745146563
+        }
+      },
+      "mean_weather_weight": 0.22299934970836657
+    },
+    "near_peak_flat_or_cooling": {
+      "days": 24,
+      "scores": {
+        "price": {
+          "brier": 0.19482480654761905,
+          "log_loss": 0.579893781427184
+        },
+        "model_p": {
+          "brier": 0.2061057561325125,
+          "log_loss": 0.6733986397820999
+        },
+        "global_anchor": {
+          "brier": 0.19442106362343634,
+          "log_loss": 0.5799920044313011
+        },
+        "state_anchor": {
+          "brier": 0.194489808137151,
+          "log_loss": 0.5796432001877533
+        }
+      },
+      "mean_weather_weight": 0.06631281937127519
+    },
+    "rising": {
+      "days": 31,
+      "scores": {
+        "price": {
+          "brier": 0.15880769265232977,
+          "log_loss": 0.46825692321724266
+        },
+        "model_p": {
+          "brier": 0.16495859131957794,
+          "log_loss": 0.49378148505998093
+        },
+        "global_anchor": {
+          "brier": 0.1560915950357931,
+          "log_loss": 0.4626132240304334
+        },
+        "state_anchor": {
+          "brier": 0.1563886041964791,
+          "log_loss": 0.4635906343284138
+        }
+      },
+      "mean_weather_weight": 0.19713529062727245
+    }
+  },
+  "paired_state_minus_market_brier": {
+    "mean": -0.0008256197026813824,
+    "ci95": [
+      -0.005844568334373136,
+      0.00425349080539053
+    ],
+    "bootstrap": "7 observed days, paired, descriptive"
+  },
+  "inputs": {
+    "real_price_backtest_trades.csv": "a92e8ab9bc122bee352b89adc230b8c3e7836470b19a35c1c00b67a93dc846c7",
+    "knyc_hourly_2019_2026.csv": "147e663588c930e115580ddb87c8a176d74b5b8122aeb54d812feffbb900af45"
+  },
+  "protocol": {
+    "min_global_dates": 30,
+    "min_state_dates": 10,
+    "state_prior_dates": 30,
+    "penalty": 0.01,
+    "embargo_calendar_days": 2,
+    "parameter_search": false
+  },
+  "limitations": [
+    "Unresolved legacy price joins, midpoint proxies, no depth or receipt times.",
+    "Matched NYC subset only; missing observations may select days.",
+    "Two-day label delay is assumed, not actual settlement availability.",
+    "No marine-state test: aligned historical cloud/wind data unavailable in this input.",
+    "Previously inspected data; exploratory subgroup analysis, not confirmed alpha."
+  ]
+}

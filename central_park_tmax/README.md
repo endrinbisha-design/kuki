@@ -29,6 +29,10 @@ conditional remaining-rise and market-anchor experiments, and the gaps that prev
 these results from establishing executable trading alpha. Research models are not
 automatically promoted to the live prediction path.
 
+**Follow-up:** [`MODEL_FOLLOWUP.md`](MODEL_FOLLOWUP.md) adds report-based targets,
+standard-time day alignment, market-state and report/market comparisons, depth-aware
+quote diagnostics, and a ranked plan for forward alpha research.
+
 ## 1. Scientific motivation
 
 Numerical weather prediction (NWP) models have systematic, location-specific errors. Central

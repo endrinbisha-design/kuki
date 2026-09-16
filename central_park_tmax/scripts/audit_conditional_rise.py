@@ -22,19 +22,21 @@ sys.path.insert(0, str(ROOT / "src"))
 from central_park_tmax.models.conditional_rise import ConditionalRemainingRise, THRESHOLDS
 
 
-def build_snapshots(raw):
+def build_snapshots(raw, *, standard_day=False):
     df = raw.copy()
     df["valid"] = pd.to_datetime(df.valid, utc=True, errors="raise")
     df["tmpf"] = pd.to_numeric(df.tmpf, errors="coerce")
     df = df[df.tmpf.between(-40, 130)].sort_values("valid").drop_duplicates("valid", keep="last")
     df["local"] = df.valid.dt.tz_convert("America/New_York")
-    df["date"] = df.local.dt.date
+    # CLI days use fixed local STANDARD time, not daylight-saving civil midnight.
+    df["day_clock"] = df.valid.dt.tz_convert("Etc/GMT+5") if standard_day else df.local
+    df["date"] = df.day_clock.dt.date
     rows = []
     for day, obs in df.groupby("date"):
         # Restrict to observed warm-season data, avoid partial first/last days.
         if day.month not in (5, 6, 7, 8, 9):
             continue
-        if obs.local.dt.hour.nunique() < 20 or obs.local.dt.hour.min() > 1 or obs.local.dt.hour.max() < 23:
+        if obs.day_clock.dt.hour.nunique() < 20 or obs.day_clock.dt.hour.min() > 1 or obs.day_clock.dt.hour.max() < 23:
             continue
         final = float(obs.tmpf.max())
         for hour in range(13, 19):
