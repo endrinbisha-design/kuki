@@ -25,12 +25,20 @@ import datetime as dt
 import io
 import json
 import re
+import sys
 import urllib.request
 from pathlib import Path
 
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+# The canonical fee, not a local copy of it. The first version of the pricing block below
+# reimplemented ceil(0.07*C*P*(1-P)) from memory, ceiled PER CONTRACT instead of per order
+# and divided by 100 once too often, which understated the fee ~30x and turned a +1.1 %
+# edge into a +1.5 % one. Import the formula; do not retype it.
+from central_park_tmax.data.kalshi import kalshi_taker_fee  # noqa: E402
+
 UA = {"User-Agent": "central_park_tmax/0.1 (research; endrinsberisha@gmail.com)"}
 START = dt.date(2026, 8, 1)
 SIX = re.compile(r"(?:^|\s)1([01])(\d{3})(?:\s|$)")
@@ -126,6 +134,47 @@ def bucket_on(ladders, day: dt.date, t: int):
     return None
 
 
+def _candle_cents(node, field: str = "close"):
+    """Candle price in cents, tolerant of both API encodings.
+
+    Kalshi moved these from integer cents (``close``) to dollar STRINGS
+    (``close_dollars``). Read both and expect a third. See data/kalshi.py.
+    """
+    if not node:
+        return None
+    v = node.get(field)
+    if v is not None:
+        return float(v)
+    v = node.get(field + "_dollars")
+    return float(v) * 100.0 if v is not None else None
+
+
+def ask_1700(day: dt.date, lo: int, hi: int):
+    """Yes-ask in cents for that day's ``lo``-``hi`` bucket on the 17:00 EDT candle.
+
+    The price of the near-certainty was previously a hand-maintained block of numbers in
+    SOURCE_RELIABILITY.md -- precisely the thing this script exists to abolish. Derived
+    here instead so it cannot drift as days are added.
+    """
+    tick = f"KXHIGHNY-{day:%y%b%d}".upper()
+    end = int(dt.datetime(day.year, day.month, day.day, 21, 0,
+                          tzinfo=dt.timezone.utc).timestamp())   # 17:00 EDT
+    for suffix in (f"-B{lo + 0.5}", f"-B{hi - 0.5}"):
+        u = (f"{_KALSHI}/series/KXHIGHNY/markets/{tick}{suffix}"
+             f"/candlesticks?start_ts={end - 3600}&end_ts={end}&period_interval=60")
+        try:
+            with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60) as r:
+                cs = json.load(r).get("candlesticks", [])
+        except Exception:
+            continue
+        for c in cs:
+            if c.get("end_period_ts") == end:
+                a = _candle_cents(c.get("yes_ask")) or _candle_cents(c.get("price"))
+                if a:
+                    return a
+    return None
+
+
 def main() -> int:
     rows = [json.loads(l) for l in open(ROOT / "track_record/call_log.jsonl") if l.strip()]
     log = {r["target_date"]: r for r in rows if r.get("city") in (None, "nyc")}
@@ -136,6 +185,7 @@ def main() -> int:
     n = mo = af = best = pre_n = pre_ok = 0
     err: dict[int, int] = {}
     same_bucket = same_ok = wide = strad = strad_63 = 0
+    narrow: list[tuple[dt.date, tuple[int, int], bool]] = []
     daytime_fail: list[str] = []
     no_ladder = 0
     ladders = real_ladders()
@@ -179,6 +229,8 @@ def main() -> int:
                 same_ok += ba == b1
                 if b1[0] == -999 or b1[1] == 999:
                     wide += 1
+                else:
+                    narrow.append((d, b1, ba == b1))
             else:
                 strad += 1
                 strad_63 += ba == b1
@@ -202,6 +254,28 @@ def main() -> int:
     hold_pct = f"{pre_ok/pre_n:.0%}" if pre_n else "n/a"
     print(f"  integers straddle a boundary {strad:>3}/{pre_n}   "
           f"{hold_pct} side won {strad_63}/{strad}")
+
+    # What the market charges for that near-certainty. Priced from the 17:00 EDT candle
+    # on the day itself, so it is the ask an actual taker faced, not a settled-market
+    # retrospective. Fee is Kalshi's taker fee, ceil(0.07*P*(1-P)) cents per contract.
+    print("\nPRICE OF THE NARROW-BUCKET CERTAINTY (17:00 EDT ask, $10 flat stake)")
+    asks, staked, ret = [], 0.0, 0.0
+    for day, (lo, hi), ok in narrow:
+        a = ask_1700(day, lo, hi)
+        if a is None:
+            print(f"  {day}  {lo}-{hi:<6}  no 17:00 candle")
+            continue
+        asks.append(a)
+        n_ct = 1000.0 / a                        # $10 in cents / ask
+        fee_c = kalshi_taker_fee(a / 100.0, n_ct) * 100.0   # whole-order fee, in cents
+        staked += 1000.0
+        ret += (100.0 * n_ct - fee_c) if ok else -fee_c
+        print(f"  {day}  {lo}-{hi:<6} {a:5.0f}c   {'correct' if ok else 'WRONG'}")
+    if asks:
+        net = ret - staked
+        print(f"  n={len(asks)}  mean ask {sum(asks)/len(asks):.1f}c   "
+              f"net {net/100:+.2f} on ${staked/100:.0f} staked = {net/staked:+.1%} per bet")
+        print("  (before slippage and any depth check -- see EDGE_DECAY.md)")
     return 0
 
 
