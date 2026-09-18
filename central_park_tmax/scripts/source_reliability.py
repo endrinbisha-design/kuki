@@ -180,7 +180,7 @@ def main() -> int:
     log = {r["target_date"]: r for r in rows if r.get("city") in (None, "nyc")}
     days = sorted(d for d in log
                   if d >= START.isoformat() and log[d].get("actual_high_f") is not None)
-    _, grp = load_metar(START, dt.date.fromisoformat(days[-1]) + dt.timedelta(days=2))
+    snap, grp = load_metar(START, dt.date.fromisoformat(days[-1]) + dt.timedelta(days=2))
 
     n = mo = af = best = pre_n = pre_ok = 0
     err: dict[int, int] = {}
@@ -236,6 +236,36 @@ def main() -> int:
                 strad_63 += ba == b1
 
     print(f"days with groups: {n}   days with a recorded preliminary: {pre_n}\n")
+    # The afternoon group is NOT an independent measurement on every day. On a substantial
+    # minority it reports exactly the morning group's value while exceeding every snapshot
+    # inside its own 2 PM-8 PM window, which the trace cannot produce. Found 09-17. Tracked
+    # here so the share is visible on every run rather than rediscovered.
+    dup = dup_hi = dup_ok = nondup = nondup_ok = 0
+    for ds in days:
+        d = dt.date.fromisoformat(ds)
+        if d not in grp:
+            continue
+        m, a = grp[d].get("08"), grp[d].get("14")
+        if m is None or a is None:
+            continue
+        act = log[ds]["actual_high_f"]
+        if abs(a - m) < 0.01:
+            dup += 1
+            dup_ok += half_up(a) == act
+            sm = max((snap.get(d, {}).get(f"{h:02d}:51") for h in range(14, 20)
+                      if snap.get(d, {}).get(f"{h:02d}:51") is not None), default=None)
+            if sm is not None and a > sm + 0.01:
+                dup_hi += 1
+        else:
+            nondup += 1
+            nondup_ok += half_up(a) == act
+    print("AFTERNOON GROUP INDEPENDENCE")
+    print(f"  duplicates the morning group exactly  {dup:>3}/{dup + nondup}")
+    print(f"    ...and exceeds every snapshot in its own window  {dup_hi:>3}  (trace cannot do this)")
+    print(f"  afternoon group correct, duplicate days     {dup_ok:>3}/{dup}")
+    print(f"  afternoon group correct, non-duplicate days {nondup_ok:>3}/{nondup}"
+          f"  = {nondup_ok/nondup:.0%}" if nondup else "")
+    print()
     print("SOURCE ACCURACY (matches settlement)")
     print(f"  morning group   (1:51 PM)  {mo:>3}/{n}  = {mo/n:.0%}")
     print(f"  preliminary CLI (~4:40 PM) {pre_ok:>3}/{pre_n}  = {pre_ok/pre_n:.0%}")
