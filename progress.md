@@ -34,4 +34,6 @@ See `curriculum/phase2-syllabus.md`. Each day: prob/EV + brainteaser + a Track G
 **Current position:** Day 17 complete → next is Day 18 (Track G: rates & fixed income I · Track D: correlation & dispersion) + big quiz.
 **Next big quiz:** Day 18 (covers Days 16–18, both tracks).
 
-**Standalone quizzes:** `quizzes/options-comprehensive-quiz-1.md` — big review of Days 1–11 + options strategies (interview-style). Score: ___ / 32.
+**Standalone quizzes:**
+- `quizzes/options-comprehensive-quiz-1.md` — big review of Days 1–11 + options strategies (interview-style). Score: ___ / 32.
+- `quizzes/black-scholes-refresher-test.md` — theory-only refresher test on the whole BS model (foundations → pricing → Greeks → implied vol). Score: ___ / 24.
