@@ -236,11 +236,20 @@ def main() -> int:
                 strad_63 += ba == b1
 
     print(f"days with groups: {n}   days with a recorded preliminary: {pre_n}\n")
-    # The afternoon group is NOT an independent measurement on every day. On a substantial
-    # minority it reports exactly the morning group's value while exceeding every snapshot
-    # inside its own 2 PM-8 PM window, which the trace cannot produce. Found 09-17. Tracked
-    # here so the share is visible on every run rather than rediscovered.
+    # The afternoon group is NOT always an independent measurement. On a substantial minority
+    # it reports exactly the morning group's value while exceeding every snapshot inside its
+    # own 2 PM-8 PM window. Found 09-17, where that pattern was a value carried forward.
+    #
+    # BUT EXACT EQUALITY IS NOT SUFFICIENT, and 09-18 proved it inside 24 hours: a
+    # DOUBLE-TOPPED day produces the same two symptoms honestly. The discriminator is the
+    # CLI's peak TIME:
+    #     peak time OUTSIDE 14:00-20:00  -> carried forward   (09-17, peak 12:55 PM)
+    #     peak time INSIDE  14:00-20:00  -> genuine reading   (09-18, peak 2:16 PM)
+    # so the count is split three ways below and the bare equality count is reported only as
+    # an UPPER BOUND. Peak times come from actual_high_time_lst, which exists from 09-16
+    # onward; the CLI archive retains about a week, so August can never be classified.
     dup = dup_hi = dup_ok = nondup = nondup_ok = 0
+    carried = genuine = unknown = 0
     for ds in days:
         d = dt.date.fromisoformat(ds)
         if d not in grp:
@@ -256,12 +265,21 @@ def main() -> int:
                       if snap.get(d, {}).get(f"{h:02d}:51") is not None), default=None)
             if sm is not None and a > sm + 0.01:
                 dup_hi += 1
+            pk = log[ds].get("actual_high_time_lst")
+            if pk is None:
+                unknown += 1
+            elif 1400 <= int(pk) < 2000:
+                genuine += 1          # double-topped day: the equality is honest
+            else:
+                carried += 1
         else:
             nondup += 1
             nondup_ok += half_up(a) == act
     print("AFTERNOON GROUP INDEPENDENCE")
-    print(f"  duplicates the morning group exactly  {dup:>3}/{dup + nondup}")
-    print(f"    ...and exceeds every snapshot in its own window  {dup_hi:>3}  (trace cannot do this)")
+    print(f"  duplicates the morning group exactly  {dup:>3}/{dup + nondup}   (UPPER BOUND)")
+    print(f"    ...and exceeds every snapshot in its own window  {dup_hi:>3}")
+    print(f"    classified by CLI peak time: carried forward {carried}, "
+          f"genuine double-top {genuine}, unknown {unknown}")
     print(f"  afternoon group correct, duplicate days     {dup_ok:>3}/{dup}")
     print(f"  afternoon group correct, non-duplicate days {nondup_ok:>3}/{nondup}"
           f"  = {nondup_ok/nondup:.0%}" if nondup else "")

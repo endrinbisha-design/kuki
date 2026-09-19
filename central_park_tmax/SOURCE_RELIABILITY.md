@@ -1,6 +1,6 @@
 # Which source actually tells you the settlement, and when
 
-Measured over the 48 consecutive logged KNYC days, 2026-08-01 → 09-17
+Measured over the 49 consecutive logged KNYC days, 2026-08-01 → 09-18
 (`track_record/call_log.jsonl`). **Every number below is produced by
 `scripts/source_reliability.py`** — re-derived from the METAR archive on each run, never
 incremented by hand. Re-run it after adding a day and paste the output; do not edit the
@@ -13,41 +13,43 @@ quantisation section — are deliberately frozen at what was known when the call
 and should not be refreshed. Everything else tracks the latest run.
 
 This document exists because on 09-11 I claimed the preliminary CLI had beaten the
-six-hour group and that "the ordering is reversed." **Tested across all 48 days, that is
+six-hour group and that "the ordering is reversed." **Tested across all 49 days, that is
 wrong.** The groups are settlement-grade and the preliminary is not.
 
 ## The scoreboard
 
 | source | available | matches settlement |
 |---|---|---|
-| morning group (8 AM–2 PM) | 1:51 PM | 20/48 — **42 %** |
-| preliminary CLI | ~4:31–5:05 PM | 17/25 — **68 %** |
-| afternoon group (2 PM–8 PM) | 7:51 PM | 40/48 — **83 %** † |
-| **max of ALL same-day groups** | **7:51 PM** | **47/48 — 98 %** |
+| morning group (8 AM–2 PM) | 1:51 PM | 21/49 — **43 %** |
+| preliminary CLI | ~4:31–5:05 PM | 18/26 — **69 %** |
+| afternoon group (2 PM–8 PM) | 7:51 PM | 41/49 — **84 %** † |
+| **max of ALL same-day groups** | **7:51 PM** | **48/49 — 98 %** |
 
-† **That 83 % is partly a free ride — see "The afternoon group is not always an
-independent measurement" below.** On the 13 days where it merely repeats the morning
-group it scores 13/13; on the other 35 it scores 27/35 = 77 %.
+† **That 84 % is partly a free ride — see "The afternoon group is not always an
+independent measurement" below.** On the 14 days where it repeats the morning group it
+scores 14/14; on the other 35 it scores 27/35 = 77 %. **The partition behind those two
+numbers is itself known to be wrong in at least one case, so treat 77 % as indicative
+rather than measured.**
 
 **That last row says "all same-day groups" for a reason, and the wording is a correction.**
 It originally read "max of both groups" and was computed from the morning and afternoon
 groups only. 2026-09-14 broke it: an overnight-max day settling at 75, where morning
 (73.04) and afternoon (73.94) both round to 74, while the **2 AM–8 AM group reads 75.02**
-and was never consulted. Across the 48 days, daytime-only would miss **two** — 08-27 and
+and was never consulted. Across the 49 days, daytime-only would miss **two** — 08-27 and
 09-14 — where all-same-day-groups misses one. The 98 % was under-specified, not wrong; two
 of three available groups were going in, and no earlier day in the run stressed it.
 
 Read the timing column before the accuracy column; these are not competing at the same
 hour.
 
-* **At 4:40 PM the preliminary is the best thing available** — 68 % against the morning
-  group's 42 %. That much of the 09-11 observation survives.
+* **At 4:40 PM the preliminary is the best thing available** — 69 % against the morning
+  group's 43 %. That much of the 09-11 observation survives.
 * **Waiting until 7:51 PM beats it decisively.** Max of all same-day groups is 98 %. The claim that
   the preliminary supersedes the group was generalised from a single favourable day and
   does not hold.
 * The one failure of max-of-all-same-day-groups is **2026-08-27**, the sensor-contamination day
   where a 9-minute spike during heavy rain entered the group and the CLI's QC rejected it
-  (group 81, settled 77). That remains the only day in 48 where a group was wrong and the
+  (group 81, settled 77). That remains the only day in 49 where a group was wrong and the
   CLI right — so it is one exception, not a pattern, but it is the reason the 98 % is not
   100 %.
 
@@ -57,24 +59,24 @@ This is the useful finding, and it was sitting in the data the whole time:
 
 | settled − preliminary | days | share |
 |---|---|---|
-| **+0 °F** | 17 | **68 %** |
-| **+1 °F** | 8 | **32 %** |
+| **+0 °F** | 18 | **69 %** |
+| **+1 °F** | 8 | **31 %** |
 | anything else | **0** | **0 %** |
 
 Never negative. Never +2. The eight misses are 08-03, 08-17, 08-25, 08-30, 09-01, 09-03,
 09-06 and 09-13 — **every one low by exactly one degree.**
 
-The split has read 63/37, 65/35, 62/38, 64/36, 65/35, 67/33 and **68/32** on seven
+The split has read 63/37, 65/35, 62/38, 64/36, 65/35, 67/33, 68/32 and **69/31** on eight
 successive days.
 Same finding, moving numbers; quote it from the script, never from memory. Zero mass
-outside the two points is the part that has held across all seven.
+outside the two points is the part that has held across all eight.
 
 So the preliminary does not give a point estimate with unknown error; it gives a **tight
 two-outcome distribution over adjacent integers**, known at ~4:40 PM:
 
 ```
-P(settle = preliminary)     ≈ 0.68
-P(settle = preliminary + 1) ≈ 0.32
+P(settle = preliminary)     ≈ 0.69
+P(settle = preliminary + 1) ≈ 0.31
 P(anything else)            ≈ 0
 ```
 
@@ -90,7 +92,7 @@ than 100 %, so collapsing it loses information rather than adding any. For a mar
 in whole-degree buckets the split has an obvious reading — when both integers sit inside one
 bucket the bucket is ~certain, and when they straddle a boundary the split *is* the price.
 The next section measures how often each case arises and what the market charges for it:
-the certainty is real and more frequent than first reported, and it is priced at 98.7 ¢.
+the certainty is real and more frequent than first reported, and it is priced at 98.8 ¢.
 
 ## "Directly usable": the count was wrong, the conclusion survives
 
@@ -111,15 +113,15 @@ Against real ladders:
 
 | | days | result |
 |---|---|---|
-| both integers in one bucket | 17/25 (68 %) | bucket correct **17/17** |
+| both integers in one bucket | 18/26 (69 %) | bucket correct **18/18** |
 | …of which the open-ended bucket | **5** | certainty is nearly free |
-| …**genuine 2-wide bucket** | **12** | **12/12 correct** |
-| integers straddle a boundary | 8/25 (32 %) | majority side won **7/8** |
+| …**genuine 2-wide bucket** | **13** | **13/13 correct** |
+| integers straddle a boundary | 8/26 (31 %) | majority side won **7/8** |
 
-So the split delivers a genuine narrow-bucket near-certainty on **12 days in 25 — not 4 —
-and was right on all twelve.** The straddle days went 7/8 to the majority side, not 2/4.
+So the split delivers a genuine narrow-bucket near-certainty on **13 days in 26 — not 4 —
+and was right on all thirteen.** The straddle days went 7/8 to the majority side, not 2/4.
 
-**And it is still not tradeable, for the other reason.** Pricing those twelve buckets from
+**And it is still not tradeable, for the other reason.** Pricing those thirteen buckets from
 the 17:00 candle on the day (now derived by the script, see below):
 
 ```
@@ -127,10 +129,11 @@ the 17:00 candle on the day (now derived by the script, see below):
 08-23  80-81   96c     09-03  83-84   96c     09-04  84-85  100c
 09-06  75-76   98c     09-11  79-80  100c     09-13  78-79   97c
 09-15  72-73  100c     09-16  77-78  100c     09-17  82-83  100c
+09-18  80-81  100c
 ```
 
-12/12 correct, mean ask **98.7 ¢**, six of them at exactly 100 ¢. Net **+1.3 % per bet**,
-+$1.52 on twelve $10 stakes, before any slippage or depth check. That is `EDGE_DECAY.md`
+13/13 correct, mean ask **98.8 ¢**, seven of them at exactly 100 ¢. Net **+1.2 % per bet**,
++$1.52 on thirteen $10 stakes, before any slippage or depth check. That is `EDGE_DECAY.md`
 again — the same wall `PRELIM_FALLING` hit at exactly $1.00, just a whisker above zero
 instead of on it.
 
@@ -146,7 +149,7 @@ thirtyfold. Sixth instance in this project of a number that was written down ins
 computed.
 
 The honest summary: the two-point distribution is real, sharper than previously credited,
-and correctly identifies a near-certain bucket on 48 % of days. The market charges 98.7 ¢ for
+and correctly identifies a near-certain bucket on 50 % of days. The market charges 98.8 ¢ for
 that certainty. The finding is sound; the trade is not there.
 
 ## The afternoon group is not always an independent measurement
@@ -157,18 +160,44 @@ predicted the 2 PM–8 PM group would come in near 80–81, well under the morni
 read 78.98 or lower, on a trace that fell monotonically from a 12:55 PM peak. No reading in
 the window can produce that number.
 
-It is not a one-off. Across the 48 days:
+It is not a one-off. Across the 49 days:
 
 | | days |
 |---|---|
-| afternoon group **exactly equals** the morning group | **13/48** |
-| …and also exceeds every snapshot inside its own window | **11** |
+| afternoon group **exactly equals** the morning group | **14/49** — upper bound |
+| …and also exceeds every snapshot inside its own window | **12** |
 
-Eleven exact ties, each landing precisely on the morning maximum, is far more consistent
-with **a value being carried forward** than with eleven independent brief excursions that
-each happen to recover the morning peak to the tenth of a degree. The mechanism is not
-established — this is an inference from the pattern of equalities, not from documentation —
-but the pattern is strong enough to act on.
+Twelve exact ties, each landing precisely on the morning maximum, looked far more
+consistent with **a value being carried forward** than with twelve independent brief
+excursions that each recover the morning peak to the tenth of a degree.
+
+### That inference was too quick, and 09-18 falsified it within a day
+
+**Exact equality is not sufficient, because a double-topped day produces both symptoms
+honestly.** On 09-18 the afternoon group read 26.7 °C, exactly the morning group, and
+exceeded every snapshot in its own window (max 26.1 °C) — so the detector above flagged it
+as carried forward. It was not: **the CLI times the peak at 2:16 PM, inside the 2 PM–8 PM
+window.** The day genuinely touched 26.7 twice.
+
+The discriminator is therefore the **CLI peak time**, not the equality:
+
+| day | morning grp | afternoon grp | CLI peak | verdict |
+|---|---|---|---|---|
+| 09-17 | 27.8 | 27.8 | **12:55 PM** — outside the window | carried forward |
+| 09-18 | 26.7 | 26.7 | **2:16 PM** — inside the window | genuine double top |
+
+Consequences, stated plainly:
+
+* **14/49 is an upper bound on carry-forward, not a measurement of it.** At least one of
+  those days is genuine.
+* **The 13/13 vs 27/35 split rests on that wrong partition**, so 77 % is indicative only.
+* The repair works **forward only**. `actual_high_time_lst` exists from 09-16; the NWS CLI
+  archive retains about a week, so August and early September can never be classified. The
+  script now reports the three-way split (carried / genuine / unknown) rather than a single
+  count, and today that reads **1 / 1 / 12**.
+
+This possibility was written down on 09-18 *before* the evening data arrived, which is the
+only reason it was tested rather than quietly absorbed into the duplicate count.
 
 **What this does and does not damage:**
 
@@ -194,13 +223,13 @@ now prints the duplicate share on every run.
 
 Every cutoff finding in this project has been about the maximum. The 4 PM validity cutoff
 truncates the **minimum** window identically, so the same mechanism should apply with the
-sign flipped. Measured on the eight days where both products were captured while still in
+sign flipped. Measured on the nine days where both products were captured while still in
 the NWS archive (it retains about a week, so this is all that can be checked):
 
 | | error (final − preliminary) | bound |
 |---|---|---|
-| **maximum** | +0 on 7 days, +1 on 1 | never negative, never worse than **+1 °F** |
-| **minimum** | 0 on 6 days, −3 on 1, −4 on 1 | never positive, but as far as **−4 °F** |
+| **maximum** | +0 on 8 days, +1 on 1 | never negative, never worse than **+1 °F** |
+| **minimum** | 0 on 6 days, −3 on 1, −4 on 2 | never positive, but as far as **−4 °F** |
 
 Both are one-sided in the direction the cutoff predicts — the preliminary can only be
 *beaten* by what happens after 4 PM, so its max can only be too low and its min only too
@@ -211,39 +240,44 @@ Both miss days did exactly that:
 ```
 09-11   min 70 at 10:27 AM  →  67 at 11:59 PM   (−3)
 09-14   min 67 at  7:36 AM  →  63 at 11:20 PM   (−4)
+09-18   min 73 at  8:04 AM  →  69 at 11:59 PM   (−4)
 ```
 
-On both, the true minimum arrived within an hour of midnight. So the preliminary minimum is
+On all three, the true minimum arrived within an hour of midnight. So the preliminary minimum is
 **materially less trustworthy than the preliminary maximum**, and the two-point
 distribution above does *not* transfer to it — a min needs a wider, one-sided spread of at
 least four degrees.
 
-**Both misses are still 09-11 and 09-14**, and every day added since has held exactly.
-That is consistent with the mechanism rather than reassuring about it: a preliminary
+**09-18 added a third miss, and it went to the −4 °F bound again.** A clear, calm evening
+after a 26.7 °C afternoon: the preliminary's 73 at 8:04 AM was beaten by 69 at 11:59 PM.
+That is consistent with the mechanism rather than reassuring about it — a preliminary
 minimum only breaks when the sky is clear and radiational cooling runs past 11 PM, so most
 days read zero and the failures are large when they come. A mean error is a useless summary
-of a distribution shaped like that.
+of a distribution shaped like that. Three misses in nineteen days, all in September, is
+also the first direct evidence for the autumn projection below rather than an argument for
+it.
 
 This should get worse, not better, through autumn: the failure mode is hard radiational
 cooling after dark, which is exactly what shorter days and drier air produce. Relevant if a
 low-temperature market is ever priced from a preliminary CLI.
 
-**n = 8, and seven of those eight are not reproducible.** This table is the one place in
-this document that is *not* script-derived, and it cannot be made so. `prelim_low_f` only
-started being recorded on 09-15, so the log can independently confirm exactly two days
-(09-15 and 09-16, both zero error). The other six come from a one-off reading of the NWS
-archive, which has since rolled over — the products are gone and no re-derivation is
-possible. So the 7→8 increment here is a **hand-carried counter**, the precise failure mode
-that the rest of this document exists to eliminate, and it is retained only because the
-underlying evidence is unrecoverable rather than merely uncomputed. Treat the magnitudes as
-an anecdote with a direction, not a measurement. The direction is unambiguous and the
+**n = 9, and six of those nine are not reproducible.** This table is the one place in
+this document that is *not* script-derived. `prelim_low_f` only started being recorded on
+09-15, so the log can independently confirm **three** days — 09-15 and 09-16 at zero error,
+and **09-18 at −4**, which is now the best-evidenced miss in the table. The other six come
+from a one-off reading of the NWS archive, which has since rolled over; those products are
+gone and no re-derivation is possible. So the older half of this table remains a
+**hand-carried counter**, the precise failure mode the rest of this document exists to
+eliminate, retained only because the evidence is unrecoverable rather than merely
+uncomputed. Treat the six old days as an anecdote with a direction; the three logged days
+are real. The direction is unambiguous and the
 magnitudes are large enough to matter, but eight days cannot pin the spread. Going forward, `prelim_low_f` should be recorded
 alongside `prelim_high_f` so this can be re-derived rather than re-discovered — the
 evidence expires in about a week. That field is now recorded daily, and from 09-16 the
 peak and trough *times* are recorded too (`prelim_high_time_lst`, `actual_high_time_lst`),
 which is what the minimum question actually turns on — both misses above were identified by
 their timestamps, not their values. A year from now this table should be entirely
-log-derived; today it is one-quarter so.
+log-derived; today it is one-third so, up from one-quarter yesterday.
 
 ## Quantisation beats modelling near a rounding boundary
 
@@ -322,10 +356,10 @@ so its tally is withdrawn as unmeasured rather than 77 %.
 
 ## Honest limits
 
-* **n = 25 for the preliminary**, not 48. Twenty-three of the logged days never recorded a
+* **n = 26 for the preliminary**, not 49. Twenty-three of the logged days never recorded a
   preliminary-versus-final comparison, and the NWS CLI archive retains only about a week,
-  so that evidence is permanently gone. The split rests on twenty-five days.
-* A two-point distribution with zero mass elsewhere on n = 25 is exactly the kind of clean
+  so that evidence is permanently gone. The split rests on twenty-six days.
+* A two-point distribution with zero mass elsewhere on n = 26 is exactly the kind of clean
   result that gets ragged with more data. The direction (never high) is better supported
   than the magnitudes.
 * One station, one warm season. Nothing checked at KPHX or KLAS.
