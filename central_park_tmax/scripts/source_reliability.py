@@ -62,17 +62,33 @@ def load_metar(d1: dt.date, d2: dt.date, offset: int = -4):
     df["valid"] = pd.to_datetime(df["valid"], utc=True)
     snap: dict[dt.date, dict[str, float]] = {}
     grp: dict[dt.date, dict[str, float]] = {}
+    seen_min: dict[tuple, int] = {}
     for _, r in df.iterrows():
         mm = str(r.get("metar", ""))
         v = r["valid"]
+        # KNYC files its hourly ob at :51, but NOT ALWAYS. 2026-09-20 filed at 17:48 Z,
+        # and the old ``v.minute == 51`` gate dropped that ob AND the six-hour max group it
+        # carried -- silently, the way every other bug in this project has gone. One group
+        # in 203 across 51 days, so it had never bitten before and would not have announced
+        # itself when it did. Accept the whole back half of the hour instead.
+        if v.minute < 40:
+            continue
         loc = v + pd.Timedelta(hours=offset)
+        key = loc.strftime("%H:51")          # canonical label, so "15:51" lookups still work
         g = re.search(r"\bT([01])(\d{3})", mm)
-        if g and v.minute == 51:
-            snap.setdefault(loc.date(), {})[loc.strftime("%H:%M")] = c_to_f(int(g.group(2)), g.group(1))
-        if "RMK" in mm and v.minute == 51 and v.hour % 6 == 5:
+        if g:
+            # If several obs land in one hour, prefer the one closest to :51.
+            prev = seen_min.get((loc.date(), key))
+            if prev is None or abs(v.minute - 51) < abs(prev - 51):
+                seen_min[(loc.date(), key)] = v.minute
+                snap.setdefault(loc.date(), {})[key] = c_to_f(int(g.group(2)), g.group(1))
+        if "RMK" in mm and v.hour % 6 == 5:
             gg = SIX.search(mm.split("RMK", 1)[1])
             if gg:
-                end = v + pd.Timedelta(minutes=9)
+                # The group covers the six hours ending at the SYNOPTIC hour, which is the
+                # next hour boundary -- not ``v + 9 minutes``, which only happened to be
+                # right when the ob was filed at :51.
+                end = v.normalize() + pd.Timedelta(hours=v.hour + 1)
                 sl = end - pd.Timedelta(hours=6) + pd.Timedelta(hours=offset)
                 el = end + pd.Timedelta(hours=offset)
                 if sl.date() == el.date():
