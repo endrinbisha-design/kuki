@@ -26,6 +26,7 @@ import io
 import json
 import re
 import sys
+import time
 import urllib.request
 from pathlib import Path
 
@@ -57,8 +58,30 @@ def load_metar(d1: dt.date, d2: dt.date, offset: int = -4):
          "&tz=UTC&format=onlycomma&latlon=no&missing=M&trace=T"
          f"&year1={d1.year}&month1={d1.month}&day1={d1.day}"
          f"&year2={d2.year}&month2={d2.month}&day2={d2.day}")
-    txt = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=300).read().decode()
+    # IEM returns 503 intermittently -- three times in this run -- and the old single-shot
+    # call simply raised, killing whatever analysis was in progress. Retry with backoff.
+    txt = None
+    last = None
+    for delay in (0, 2, 4, 8, 16):
+        if delay:
+            time.sleep(delay)
+        try:
+            txt = urllib.request.urlopen(urllib.request.Request(u, headers=UA),
+                                         timeout=300).read().decode()
+            break
+        except Exception as exc:               # noqa: BLE001 - any transport failure retries
+            last = exc
+    if txt is None:
+        raise RuntimeError(f"IEM unreachable after 5 attempts: {last}")
+    # And check the body is actually CSV. On 2026-09-21 aviationweather handed back a 502
+    # HTML page and an ad-hoc parser turned it into ZERO rows without complaint -- the same
+    # silent-failure family as every other bug here. An empty frame must be an error, not
+    # an empty result.
+    if "station" not in txt.split("\n", 1)[0]:
+        raise RuntimeError(f"IEM returned non-CSV (first 120 chars): {txt[:120]!r}")
     df = pd.read_csv(io.StringIO(txt), low_memory=False)
+    if df.empty:
+        raise RuntimeError("IEM returned a CSV with no rows")
     df["valid"] = pd.to_datetime(df["valid"], utc=True)
     snap: dict[dt.date, dict[str, float]] = {}
     grp: dict[dt.date, dict[str, float]] = {}
