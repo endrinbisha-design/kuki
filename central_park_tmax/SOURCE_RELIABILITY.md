@@ -1,6 +1,6 @@
 # Which source actually tells you the settlement, and when
 
-Measured over the 52 consecutive logged KNYC days, 2026-08-01 → 09-21
+Measured over the 53 consecutive logged KNYC days, 2026-08-01 → 09-22
 (`track_record/call_log.jsonl`). **Every number below is produced by
 `scripts/source_reliability.py`** — re-derived from the METAR archive on each run, never
 incremented by hand. Re-run it after adding a day and paste the output; do not edit the
@@ -13,43 +13,43 @@ quantisation section — are deliberately frozen at what was known when the call
 and should not be refreshed. Everything else tracks the latest run.
 
 This document exists because on 09-11 I claimed the preliminary CLI had beaten the
-six-hour group and that "the ordering is reversed." **Tested across all 52 days, that is
+six-hour group and that "the ordering is reversed." **Tested across all 53 days, that is
 wrong.** The groups are settlement-grade and the preliminary is not.
 
 ## The scoreboard
 
 | source | available | matches settlement |
 |---|---|---|
-| morning group (8 AM–2 PM) | 1:51 PM | 22/52 — **42 %** |
-| preliminary CLI | ~4:31–5:14 PM | 20/29 — **69 %** |
-| afternoon group (2 PM–8 PM) | 7:51 PM | 44/52 — **85 %** † |
-| **max of ALL same-day groups** | **7:51 PM** | **51/52 — 98 %** |
+| morning group (8 AM–2 PM) | 1:51 PM | 22/53 — **42 %** |
+| preliminary CLI | ~4:31–5:14 PM | 21/30 — **70 %** |
+| afternoon group (2 PM–8 PM) | 7:51 PM | 45/53 — **85 %** † |
+| **max of ALL same-day groups** | **7:51 PM** | **52/53 — 98 %** |
 
 † **That 85 % is partly a free ride — see "The afternoon group is not always an
 independent measurement" below.** On the 15 days where it repeats the morning group it
-scores 15/15; on the other 37 it scores 29/37 = 78 %. **The partition behind those two
-numbers is itself known to be wrong in at least one case, so treat 78 % as indicative
+scores 15/15; on the other 38 it scores 30/38 = 79 %. **The partition behind those two
+numbers is itself known to be wrong in at least one case, so treat 79 % as indicative
 rather than measured.**
 
 **That last row says "all same-day groups" for a reason, and the wording is a correction.**
 It originally read "max of both groups" and was computed from the morning and afternoon
 groups only. 2026-09-14 broke it: an overnight-max day settling at 75, where morning
 (73.04) and afternoon (73.94) both round to 74, while the **2 AM–8 AM group reads 75.02**
-and was never consulted. Across the 52 days, daytime-only would miss **two** — 08-27 and
+and was never consulted. Across the 53 days, daytime-only would miss **two** — 08-27 and
 09-14 — where all-same-day-groups misses one. The 98 % was under-specified, not wrong; two
 of three available groups were going in, and no earlier day in the run stressed it.
 
 Read the timing column before the accuracy column; these are not competing at the same
 hour.
 
-* **At 4:40 PM the preliminary is the best thing available** — 69 % against the morning
+* **At 4:40 PM the preliminary is the best thing available** — 70 % against the morning
   group's 42 %. That much of the 09-11 observation survives.
 * **Waiting until 7:51 PM beats it decisively.** Max of all same-day groups is 98 %. The claim that
   the preliminary supersedes the group was generalised from a single favourable day and
   does not hold.
 * The one failure of max-of-all-same-day-groups is **2026-08-27**, the sensor-contamination day
   where a 9-minute spike during heavy rain entered the group and the CLI's QC rejected it
-  (group 81, settled 77). That remains the only day in 52 where a group was wrong and the
+  (group 81, settled 77). That remains the only day in 53 where a group was wrong and the
   CLI right — so it is one exception, not a pattern, but it is the reason the 98 % is not
   100 %.
 
@@ -62,13 +62,14 @@ Day twenty-eight was a +2.
 
 | settled − preliminary | days | share |
 |---|---|---|
-| **+0 °F** | 20 | **69 %** |
-| **+1 °F** | 8 | **28 %** |
+| **+0 °F** | 21 | **70 %** |
+| **+1 °F** | 8 | **27 %** |
 | **+2 °F** | **1** | **3 %** |
 | negative | **0** | **0 %** |
 
 The nine misses are 08-03, 08-17, 08-25, 08-30, 09-01, 09-03, 09-06, 09-13 (all +1) and
-**09-20 (+2)**. The never-negative direction still holds at 29/29.
+**09-20 (+2)**. The never-negative direction still holds at 30/30 — **but see the minimum
+section below, which shows what that record does and does not protect against.**
 
 **The +2 is a different mechanism, not a bigger version of the +1.** On 09-20 the
 preliminary read 67 at 2:59 PM and the day settled at 69 **with the maximum at 7:23 PM** —
@@ -93,15 +94,17 @@ So the preliminary gives a **one-sided distribution over the preliminary and the
 integers above it**, known at ~4:40 PM:
 
 ```
-P(settle = preliminary)     ≈ 0.69
-P(settle = preliminary + 1) ≈ 0.28
-P(settle = preliminary + 2) ≈ 0.03     <- 1 day in 29, added 09-20
-P(settle < preliminary)     ≈ 0        (0/29, and mechanically expected)
+P(settle = preliminary)     ≈ 0.70
+P(settle = preliminary + 1) ≈ 0.27
+P(settle = preliminary + 2) ≈ 0.03     <- 1 day in 30, added 09-20
+P(settle < preliminary)     ≈ 0        (0/30, but see the caveat below)
 ```
 
 The never-below half rests on a mechanism — the preliminary can only be *beaten* by what
 happens after its cutoff — so it is better supported than the upper tail, whose shape is
-one observation deep beyond +1.
+one observation deep beyond +1. **That mechanism is about the weather, and it does not
+cover the instrument**; 09-22 showed the minimum going the forbidden way purely because the
+final's QC removed a bad reading. The same could happen to a maximum. See below.
 
 **This is still worth more than the rules built on top of it.** `SEASONAL_TRANSITION.md` documents
 two rules (trace shape, 72 %; the mechanism, whose tally is now withdrawn as unmeasured —
@@ -136,12 +139,12 @@ Against real ladders:
 
 | | days | result |
 |---|---|---|
-| both integers in one bucket | 21/29 (72 %) | bucket correct **21/21** |
+| both integers in one bucket | 21/30 (70 %) | bucket correct **21/21** |
 | …of which the open-ended bucket | **6** | certainty is nearly free |
 | …**genuine 2-wide bucket** | **15** | **15/15 correct** |
-| integers straddle a boundary | 8/29 (28 %) | majority side won **7/8** |
+| integers straddle a boundary | 8/30 (27 %) | majority side won **7/8** |
 
-So the split flags a genuine narrow-bucket on **15 days in 29 — not 4 — and was right on
+So the split flags a genuine narrow-bucket on **15 days in 30 — not 4 — and was right on
 all fifteen.** The straddle days went 7/8 to the majority side, not 2/4.
 
 **But "near-certainty" was the wrong word, and 09-20's +2 shows why it was structurally
@@ -206,7 +209,7 @@ It is not a one-off. Across the 49 days:
 
 | | days |
 |---|---|
-| afternoon group **exactly equals** the morning group | **15/52** — upper bound |
+| afternoon group **exactly equals** the morning group | **15/53** — upper bound |
 | …and also exceeds every snapshot inside its own window | **12** |
 
 Twelve exact ties, each landing precisely on the morning maximum, looked far more
@@ -283,7 +286,38 @@ six-hour groups were being treated as three independent measurements when on rou
 quarter of days two of them are one measurement reported twice.** `scripts/source_reliability.py`
 now prints the duplicate share on every run.
 
-## The minimum is the mirror image, and far worse
+## The minimum is NOT simply the mirror image — falsified 2026-09-22
+
+**This section used to say the preliminary minimum is "never positive, but as far as
+−4 °F". On 09-22 it was +4.** Preliminary 55 at 4:25 AM; final **59** at 5:00 AM.
+
+**And it was not the weather.** The hourly stream sits flat at 59.0 °F from 3:51 AM
+straight through 8:51 AM — nothing in it supports a 55. The preliminary carried a spurious
+sub-hourly reading four degrees below a flat trace, and the final's QC removed it. That is
+the **second documented QC rejection**, after 08-27 where a rain-driven nine-minute spike
+inflated a six-hour group and the CLI threw it out.
+
+### Why this matters for the maximum, which is the number that settles the market
+
+Both one-sided claims in this document rest on the same mechanism: *a preliminary can only
+be beaten by what happens after its cutoff*, so a max can only be too low and a min only
+too high. **That argument is about meteorology. QC rejection is a separate channel, and it
+runs in either direction.**
+
+| channel | affects max | affects min | covered by the mechanism argument? |
+|---|---|---|---|
+| late warming / cooling after the 4 PM cutoff | too low | too high | **yes** |
+| QC removing a spurious reading between products | **could go either way** | **did, +4 on 09-22** | **no** |
+
+So the maximum's 30/30 never-negative record is protected by physics against late warming
+and by **nothing at all** against a spurious high being deleted between the preliminary and
+the final. 08-27 establishes that spurious highs occur at this station. The record is real;
+the *guarantee* people would read into it is not. Quote it as "not observed in 30 days".
+
+The rest of this section — the magnitudes, the radiational-cooling mode — still stands for
+the weather channel, and is retained below.
+
+## The minimum's weather channel: still the mirror image, and far worse
 
 Every cutoff finding in this project has been about the maximum. The 4 PM validity cutoff
 truncates the **minimum** window identically, so the same mechanism should apply with the
@@ -292,10 +326,10 @@ the NWS archive (it retains about a week, so this is all that can be checked):
 
 | | error (final − preliminary) | bound |
 |---|---|---|
-| **maximum** | +0 on 8 days, +1 on 1 | never negative, never worse than **+1 °F** |
-| **minimum** | 0 on 6 days, −3 on 1, −4 on 2 | never positive, but as far as **−4 °F** |
+| **maximum** | +0 on 9 days, +1 on 1 | not yet observed negative; worst **+1 °F** |
+| **minimum** | 0 on 6 days, −3 on 1, −4 on 2, **+4 on 1** | **no longer one-sided** |
 
-Both are one-sided in the direction the cutoff predicts — the preliminary can only be
+The weather channel is one-sided in the direction the cutoff predicts — the preliminary can only be
 *beaten* by what happens after 4 PM, so its max can only be too low and its min only too
 high. **But the magnitudes are not comparable.** A late max can exceed the 4 PM value by a
 fraction of a degree; a clear evening can drop several degrees below the morning minimum.
@@ -307,7 +341,9 @@ Both miss days did exactly that:
 09-18   min 73 at  8:04 AM  →  69 at 11:59 PM   (−4)
 ```
 
-On all three, the true minimum arrived within an hour of midnight. So the preliminary minimum is
+On all three, the true minimum arrived within an hour of midnight. **The fourth miss,
+09-22, is not in this list because it is not a weather event** — it is the QC rejection
+described at the top of this section, and it went the other way (+4). So the preliminary minimum is
 **materially less trustworthy than the preliminary maximum**, and the two-point
 distribution above does *not* transfer to it — a min needs a wider, one-sided spread of at
 least four degrees.
@@ -359,10 +395,11 @@ observable at 4 PM.** Until there is a cloud forecast in the pipeline, the hones
 on any given night's minimum is no position. Relevant if a
 low-temperature market is ever priced from a preliminary CLI.
 
-**n = 9, and six of those nine are not reproducible.** This table is the one place in
+**n = 10, and six of those ten are not reproducible.** This table is the one place in
 this document that is *not* script-derived. `prelim_low_f` only started being recorded on
 09-15, so the log can independently confirm **three** days — 09-15 and 09-16 at zero error,
-and **09-18 at −4**, which is now the best-evidenced miss in the table. The other six come
+**09-18 at −4** and **09-22 at +4** — the two most consequential rows in the table are both
+log-derived, which is the whole reason the field was added. The other six come
 from a one-off reading of the NWS archive, which has since rolled over; those products are
 gone and no re-derivation is possible. So the older half of this table remains a
 **hand-carried counter**, the precise failure mode the rest of this document exists to
@@ -375,7 +412,8 @@ evidence expires in about a week. That field is now recorded daily, and from 09-
 peak and trough *times* are recorded too (`prelim_high_time_lst`, `actual_high_time_lst`),
 which is what the minimum question actually turns on — both misses above were identified by
 their timestamps, not their values. A year from now this table should be entirely
-log-derived; today it is one-third so, up from one-quarter yesterday.
+log-derived; today it is four-tenths so, and the logged rows are already the ones
+carrying the findings.
 
 ## Quantisation beats modelling near a rounding boundary
 
