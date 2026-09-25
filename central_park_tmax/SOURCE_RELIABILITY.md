@@ -1,6 +1,6 @@
 # Which source actually tells you the settlement, and when
 
-Measured over the 54 consecutive logged KNYC days, 2026-08-01 → 09-23
+Measured over the 55 consecutive logged KNYC days, 2026-08-01 → 09-24
 (`track_record/call_log.jsonl`). **Every number below is produced by
 `scripts/source_reliability.py`** — re-derived from the METAR archive on each run, never
 incremented by hand. Re-run it after adding a day and paste the output; do not edit the
@@ -13,43 +13,43 @@ quantisation section — are deliberately frozen at what was known when the call
 and should not be refreshed. Everything else tracks the latest run.
 
 This document exists because on 09-11 I claimed the preliminary CLI had beaten the
-six-hour group and that "the ordering is reversed." **Tested across all 54 days, that is
+six-hour group and that "the ordering is reversed." **Tested across all 55 days, that is
 wrong.** The groups are settlement-grade and the preliminary is not.
 
 ## The scoreboard
 
 | source | available | matches settlement |
 |---|---|---|
-| morning group (8 AM–2 PM) | 1:51 PM | 22/54 — **41 %** |
-| preliminary CLI | ~4:31–5:14 PM | 22/31 — **71 %** |
-| afternoon group (2 PM–8 PM) | 7:51 PM | 46/54 — **85 %** † |
-| **max of ALL same-day groups** | **7:51 PM** | **53/54 — 98 %** |
+| morning group (8 AM–2 PM) | 1:51 PM | 22/55 — **40 %** |
+| preliminary CLI | ~4:31–5:14 PM | 23/32 — **72 %** |
+| afternoon group (2 PM–8 PM) | 7:51 PM | 47/55 — **85 %** † |
+| **max of ALL same-day groups** | **7:51 PM** | **54/55 — 98 %** |
 
 † **That 85 % is partly a free ride — see "The afternoon group is not always an
 independent measurement" below.** On the 15 days where it repeats the morning group it
-scores 15/15; on the other 39 it scores 31/39 = 79 %. **The partition behind those two
-numbers is itself known to be wrong in at least one case, so treat 79 % as indicative
+scores 15/15; on the other 40 it scores 32/40 = 80 %. **The partition behind those two
+numbers is itself known to be wrong in at least one case, so treat 80 % as indicative
 rather than measured.**
 
 **That last row says "all same-day groups" for a reason, and the wording is a correction.**
 It originally read "max of both groups" and was computed from the morning and afternoon
 groups only. 2026-09-14 broke it: an overnight-max day settling at 75, where morning
 (73.04) and afternoon (73.94) both round to 74, while the **2 AM–8 AM group reads 75.02**
-and was never consulted. Across the 54 days, daytime-only would miss **two** — 08-27 and
+and was never consulted. Across the 55 days, daytime-only would miss **two** — 08-27 and
 09-14 — where all-same-day-groups misses one. The 98 % was under-specified, not wrong; two
 of three available groups were going in, and no earlier day in the run stressed it.
 
 Read the timing column before the accuracy column; these are not competing at the same
 hour.
 
-* **At 4:40 PM the preliminary is the best thing available** — 71 % against the morning
-  group's 41 %. That much of the 09-11 observation survives.
+* **At 4:40 PM the preliminary is the best thing available** — 72 % against the morning
+  group's 40 %. That much of the 09-11 observation survives.
 * **Waiting until 7:51 PM beats it decisively.** Max of all same-day groups is 98 %. The claim that
   the preliminary supersedes the group was generalised from a single favourable day and
   does not hold.
 * The one failure of max-of-all-same-day-groups is **2026-08-27**, the sensor-contamination day
   where a 9-minute spike during heavy rain entered the group and the CLI's QC rejected it
-  (group 81, settled 77). That remains the only day in 54 where a group was wrong and the
+  (group 81, settled 77). That remains the only day in 55 where a group was wrong and the
   CLI right — so it is one exception, not a pattern, but it is the reason the 98 % is not
   100 %.
 
@@ -62,13 +62,13 @@ Day twenty-eight was a +2.
 
 | settled − preliminary | days | share |
 |---|---|---|
-| **+0 °F** | 22 | **71 %** |
-| **+1 °F** | 8 | **26 %** |
+| **+0 °F** | 23 | **72 %** |
+| **+1 °F** | 8 | **25 %** |
 | **+2 °F** | **1** | **3 %** |
 | negative | **0** | **0 %** |
 
 The nine misses are 08-03, 08-17, 08-25, 08-30, 09-01, 09-03, 09-06, 09-13 (all +1) and
-**09-20 (+2)**. The never-negative direction still holds at 31/31 — **but see the minimum
+**09-20 (+2)**. The never-negative direction still holds at 32/32 — **but see the minimum
 section below, which shows what that record does and does not protect against.**
 
 **The +2 is a different mechanism, not a bigger version of the +1.** On 09-20 the
@@ -94,10 +94,10 @@ So the preliminary gives a **one-sided distribution over the preliminary and the
 integers above it**, known at ~4:40 PM:
 
 ```
-P(settle = preliminary)     ≈ 0.71
-P(settle = preliminary + 1) ≈ 0.26
-P(settle = preliminary + 2) ≈ 0.03     <- 1 day in 31, added 09-20
-P(settle < preliminary)     ≈ 0        (0/31, but see the caveat below)
+P(settle = preliminary)     ≈ 0.72
+P(settle = preliminary + 1) ≈ 0.25
+P(settle = preliminary + 2) ≈ 0.03     <- 1 day in 32, added 09-20
+P(settle < preliminary)     ≈ 0        (0/32, but see the caveat below)
 ```
 
 The never-below half rests on a mechanism — the preliminary can only be *beaten* by what
@@ -139,13 +139,13 @@ Against real ladders:
 
 | | days | result |
 |---|---|---|
-| both integers in one bucket | 22/31 (71 %) | bucket correct **22/22** |
+| both integers in one bucket | 23/32 (72 %) | bucket correct **23/23** |
 | …of which the open-ended bucket | **6** | certainty is nearly free |
-| …**genuine 2-wide bucket** | **16** | **16/16 correct** |
-| integers straddle a boundary | 9/31 (29 %) | majority side won **8/9** |
+| …**genuine 2-wide bucket** | **17** | **17/17 correct** |
+| integers straddle a boundary | 9/32 (28 %) | majority side won **8/9** |
 
-So the split flags a genuine narrow-bucket on **16 days in 31 — not 4 — and was right on
-all sixteen.** The straddle days went 8/9 to the majority side, not 2/4.
+So the split flags a genuine narrow-bucket on **17 days in 32 — not 4 — and was right on
+all seventeen.** The straddle days went 8/9 to the majority side, not 2/4.
 
 **But "near-certainty" was the wrong word, and 09-20's +2 shows why it was structurally
 wrong rather than just optimistic.** A 2-wide bucket `[lo, lo+1]` can only contain both
@@ -164,7 +164,7 @@ still 14/14; it is the forward-looking claim that changes, and it changes from
 marginally-positive to marginally-negative. 09-20's own preliminary sat in the open-ended
 `<=70` bucket, where +2 is harmless, which is the only reason the record is intact.
 
-**And it is still not tradeable, for the other reason.** Pricing those sixteen buckets from
+**And it is still not tradeable, for the other reason.** Pricing those seventeen buckets from
 the 17:00 candle on the day (now derived by the script, see below):
 
 ```
@@ -173,11 +173,11 @@ the 17:00 candle on the day (now derived by the script, see below):
 09-06  75-76   98c     09-11  79-80  100c     09-13  78-79   97c
 09-15  72-73  100c     09-16  77-78  100c     09-17  82-83  100c
 09-18  80-81  100c     09-19  69-70   99c     09-21  72-73  100c
-09-23  67-68  100c
+09-23  67-68  100c     09-24  66-67   98c
 ```
 
-16/16 correct, mean ask **98.9 ¢**, nine of them at exactly 100 ¢. Net **+1.0 % per bet**,
-+$1.61 on sixteen $10 stakes, before any slippage or depth check. That is `EDGE_DECAY.md`
+17/17 correct, mean ask **98.9 ¢**, nine of them at exactly 100 ¢. Net **+1.1 % per bet**,
++$1.79 on seventeen $10 stakes, before any slippage or depth check. That is `EDGE_DECAY.md`
 again — the same wall `PRELIM_FALLING` hit at exactly $1.00, just a whisker above zero
 instead of on it.
 
@@ -210,7 +210,7 @@ It is not a one-off. Across the 49 days:
 
 | | days |
 |---|---|
-| afternoon group **exactly equals** the morning group | **15/54** — upper bound |
+| afternoon group **exactly equals** the morning group | **15/55** — upper bound |
 | …and also exceeds every snapshot inside its own window | **12** |
 
 Twelve exact ties, each landing precisely on the morning maximum, looked far more
@@ -490,6 +490,50 @@ rides along with a correct answer is the easiest thing in this project to promot
 accident into a finding. See `SEASONAL_TRANSITION.md` for the consequence — the mechanism
 rule asks a question about the continuous trace and is answered with the snapshot lattice,
 so its tally is withdrawn as unmeasured rather than 77 %.
+
+## Do not score a 4 PM call against a 3 PM quote — found 2026-09-24
+
+**Every market comparison recorded in this project between 09-22 and 09-24 was measured
+across an information gap that flattered me, and the first honest measurement reversed the
+verdict.**
+
+Kalshi's candlestick `end_period_ts` is the **end** of the period. So at 3:54 PM the newest
+*complete* 60-minute candle is the one ending **15:00 local** — covering 2 PM to 3 PM. The
+3:51 observation reaches the wire around 3:53 PM. **No complete candle at call time contains
+it.** An advance call built on the 3:51 reading is therefore being compared against a market
+that has not seen the 3:51 reading.
+
+09-24 demonstrates the size of the effect. The same three strikes, an hour apart:
+
+| strike | candle ending 3 PM | candle ending 4 PM | my 3:57 PM call |
+|---|---|---|---|
+| 65 or below | 19 / 21 | **0 / 1** | 0 % |
+| 66-67 | 74 / 75 | **86 / 87** | 66 % |
+| 68-69 | 4 / 6 | **12 / 13** | 33 % |
+
+`65 or below` collapses from 19 ¢ to 0 ¢ across exactly the boundary where the 3:51
+observation lands. That quote was never a mispricing; it was a price that had not yet seen
+the datum which killed it.
+
+**And on the fair comparison the market won.** Against the stale candle, 33 % on 68-69
+looked like a 27-point edge over 6 ¢. Against the candle sharing my information it is 33 %
+against 12–13 %, and the day settled 66. That was not an edge in the tail, it was
+overweighting the tail.
+
+**What this retires.** The 09-19 entry claimed "two for two on divergences". Re-scored
+honestly, only two days had a genuine same-information disagreement: **09-16, where the
+morning group was public at 1:51 PM and inside the 2–3 PM candle and the market still
+priced 51 ¢ against my 82 % — that one stands** — and **09-24, which I lost.** One for two
+on n = 2, which is the nothing it always was. The 09-22 and 09-23 "divergences" hinged on
+the 3:51 snapshot and are latency artifacts.
+
+Every decision not to trade was still correct. But the reason given at the time — that the
+confidence intervals overlapped — was the wrong reason. The right one is that there was no
+basis for believing the market wrong at all.
+
+**Rule.** Score a 3:5x PM call against the candle **ending 16:00 local**, and label it as
+incomplete at call time. Better still, do not read an advance call's edge off any candle:
+by construction the market has one observation less than the call does.
 
 ## Honest limits
 
